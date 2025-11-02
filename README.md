@@ -35,8 +35,60 @@
 - [Architecture](#architecture)
 - [Features](#features)
 - [Getting Started](#getting-started)
+- [Conceitos e Tecnologias](#conceitos-e-tecnologias)
 - [API](#api)
 - [Risk Score](#risk-score)
 - [License](#license)
 
+---
+
+## Getting Started
+
+### Frontend (Next.js)
+
+1. **Instalar dependências:**
+```bash
+cd frontend
+npm install
+```
+
+2. **Rodar em modo desenvolvimento:**
+```bash
+npm run dev
+```
+
+O frontend estará disponível em: **http://localhost:3000**
+
+### Backend (FastAPI)
+
+1. **Criar ambiente virtual:**
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # No Windows: venv\Scripts\activate
+```
+
+2. **Instalar dependências:**
+```bash
+pip install -r requirements.txt
+```
+
+3. **Rodar o servidor:**
+```bash
+uvicorn main:app --reload
+```
+
+O backend estará disponível em: **http://localhost:8000**
+
+**Documentação da API:** http://localhost:8000/docs
+
+---
+
+## Conceitos e Tecnologias
+
+Esta secção explica os conceitos e tecnologias utilizadas no projeto, que serão adicionados ao longo do desenvolvimento.
+
+### Uvicorn
+
+O **Uvicorn** é um servidor ASGI (Asynchronous Server Gateway Interface) para aplicações Python. Ele é responsável por executar a aplicação FastAPI, recebendo pedidos HTTP e enviando respostas. O parâmetro `--reload` permite recarregar automaticamente o servidor quando há alterações no código, facilitando o desenvolvimento.
 
