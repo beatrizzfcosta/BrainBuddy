@@ -1,100 +1,148 @@
 ```mermaid
 ---
+title: "BrainBuddy - Diagrama de Classes"
 config:
-  layout: fixed
-title: 'BrainBudy: Container'
+  layout: elk
 ---
+
 classDiagram
-    class User {
-      string userId
-      string name
-      string email
-      string timezone
-      bool googleCalendarConnected
-      DateTime createdAt
-      addSubject()
-      getStudyPlan()
-    }
+direction LR
 
-    class Subject {
-      string subjectId
-      string name
-      string color
-      string period
-      string ownerId
-    }
+%% ======================
+%% CLASSES PRINCIPAIS
+%% ======================
 
-    class Topic {
-      string topicId
-      string title
-      string description
-      string subjectId
-    }
+class User {
+  +userId: string
+  +name: string
+  +email: string
+  +googleCalendarConnected: bool
+  +createdAt: DateTime
+  
+  +authenticateWithGoogle(): void
+  +connectCalendar(): void
+  +requestAISummary(topicId, slideId?): AIRequest
+  +askAISchedule(topicId): AIRequest
+  +createSubject(name): Subject
+  +listSubjects(): Subject[*]
+  +archiveSubjects(): Subject
+  +deleteSubject(subjectId): void
+}
 
-    class Doc {
-      string docId
-      string storageUrl
-      string fileName
-      string mimeType
-      string ocrText
-      string topicId
-    }
+class Subject {
+  +subjectId: string
+  +userId: string
+  +name: string
+  +createdAt: DateTime
+  
+  +createTopic(title, description): Topic
+  +listTopics(): Topic[*]
+  +deleteTopic(topicId): void
+}
 
-    class Note {
-      string noteId
-      string content
-      string source
-      string topicId
-      DateTime createdAt
-    }
+class Topic {
+  +topicId: string
+  +subjectId: string
+  +title: string
+  +description: string
+  +createdAt: DateTime
 
-    class StudySession {
-      string sessionId
-      string userId
-      string topicId
-      DateTime startTime
-      DateTime endTime
-      string calendarEventId
-      reschedule()
-    }
+  +addSlide(fileName, fileURL, mimeType): Slide
+  +addNote(content, source): Note
+  +requestSummary(): AIRequest
+  +requestVideoSuggestions(): YouTubeSuggestion[*]
+}
 
-    class AIRequest {
-      string requestId
-      string userId
-      string topicId
-      string slideId
-      string prompt
-      string response
-      string status
-      DateTime createdAt
-    }
+class Slide {
+  +slideId: string
+  +topicId: string
+  +fileName: string
+  +fileUrl: string
+  +mimeType: string
+  +uploadedAt: DateTime
+}
 
-    class YouTubeSuggestion {
-      string suggestionId
-      string topicId
-      string videoId
-      string title
-      string channel
-      string url
-    }
+class Note {
+  +noteId: string
+  +topicId: string
+  +content: string
+  +source: NoteSource // MANUAL ou GEMINI
+  +createdAt: DateTime
+}
 
-    class AuthProvider {
-      string provider
-      string accessToken
-      string refreshToken
-      string userId
-    }
+class AIRequest {
+  +requestId: string
+  +userId: string
+  +topicId: string
+  +slideId?: string
+  +prompt: string
+  +response: string
+  +status: AIStatus // PENDING, DONE, ERROR
+  +createdAt: DateTime
 
-    User "1" --> "0..*" Subject : possui
-    Subject "1" --> "0..*" Topic : contém
-    Topic "1" --> "0..*" Doc : tem
-    Topic "1" --> "0..*" Note : anota
-    User "1" --> "0..*" StudySession : agenda
-    Topic "0..1" --> "0..*" StudySession : tema
-    User "1" --> "0..*" AIRequest : pede IA
-    Topic "0..1" --> "0..*" AIRequest
-    Doc "0..1" --> "0..*" AIRequest
-    Topic "1" --> "0..*" YouTubeSuggestion : gera vídeos
-    User "1" --> "0..1" AuthProvider : autentica
+  +markDone(response): void
+  +markError(): void
+  +createStudySession(start, end): StudySession
+}
 
+class StudySession {
+  +sessionId: string
+  +userId: string
+  +topicId: string
+  +startTime: DateTime
+  +endTime: DateTime
+  +calendarEventId: string
+  +state: SessionState // PLANNED, DONE, MISSED
+
+  +syncToCalendar(): void
+  +markDone(): void
+  +markMissed(): void
+}
+
+class YouTubeSuggestion {
+  +suggestionId: string
+  +topicId: string
+  +videoId: string
+  +title: string
+  +url: string
+}
+
+%% ======================
+%% RELAÇÕES E CARDINALIDADES
+%% ======================
+
+User "1" *-- "0..*" Subject : cria >
+Subject "1" *-- "0..*" Topic : contém >
+Topic "1" *-- "0..*" Slide : possui >
+Topic "1" *-- "0..*" Note : possui >
+User "1" --> "0..*" AIRequest : faz >
+Topic "1" --> "0..*" AIRequest : gera >
+AIRequest "1" --> "0..1" StudySession : origina >
+User "1" --> "0..*" StudySession : tem >
+Topic "0..1" --> "0..*" StudySession : relacionado >
+Topic "1" --> "0..*" YouTubeSuggestion : gera >
+
+%% ======================
+%% ENUMS / TIPOS
+%% ======================
+
+class NoteSource {
+  <<enumeration>>
+  MANUAL
+  GEMINI
+}
+
+class AIStatus {
+  <<enumeration>>
+  PENDING
+  DONE
+  ERROR
+}
+
+class SessionState {
+  <<enumeration>>
+  PLANNED
+  DONE
+  MISSED
+}
 ```
