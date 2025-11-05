@@ -1,15 +1,15 @@
 <div align="center">
 
-# 🧠 BrainBudy
+# 🧠 BrainBuddy
 
 **Empower safer browsing with transparent, explainable URL analysis**
 
-[![Last commit](https://img.shields.io/github/last-commit/beatrizzfcosta/BrainBudy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBudy/commits)
-[![Top language](https://img.shields.io/github/languages/top/beatrizzfcosta/BrainBudy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBudy)
-[![Languages](https://img.shields.io/github/languages/count/beatrizzfcosta/BrainBudy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBudy)
-[![License](https://img.shields.io/github/license/beatrizzfcosta/BrainBudy?style=for-the-badge)](LICENSE)
-[![Issues](https://img.shields.io/github/issues/beatrizzfcosta/BrainBudy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBudy/issues)
-[![Stars](https://img.shields.io/github/stars/beatrizzfcosta/BrainBudy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBudy/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/beatrizzfcosta/BrainBuddy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBuddy/commits)
+[![Top language](https://img.shields.io/github/languages/top/beatrizzfcosta/BrainBuddy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBuddy)
+[![Languages](https://img.shields.io/github/languages/count/beatrizzfcosta/BrainBuddy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBuddy)
+[![License](https://img.shields.io/github/license/beatrizzfcosta/BrainBdudy?style=for-the-badge)](LICENSE)
+[![Issues](https://img.shields.io/github/issues/beatrizzfcosta/BrainBuddy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBuddy/issues)
+[![Stars](https://img.shields.io/github/stars/beatrizzfcosta/BrainBuddy?style=for-the-badge)](https://github.com/beatrizzfcosta/BrainBuddy/stargazers)
 
 <br/>
 
