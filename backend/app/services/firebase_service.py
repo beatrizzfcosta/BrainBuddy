@@ -1,9 +1,9 @@
 """
 Serviço Firebase para o backend BrainBudy.
-Inicializa o Firebase Admin SDK e fornece acesso ao Firestore e Storage.
+Inicializa o Firebase Admin SDK e fornece acesso ao Firestore.
 """
 import firebase_admin
-from firebase_admin import credentials, firestore, storage
+from firebase_admin import credentials, firestore
 import os
 from pathlib import Path
 
@@ -25,7 +25,6 @@ if not firebase_admin._apps:
 
 # Inicializar serviços
 db = firestore.client()
-bucket = storage.bucket()
 
-__all__ = ['db', 'bucket']
+__all__ = ['db']
 

@@ -279,7 +279,7 @@ export default function TestFirebase() {
 }
 ```
 
-Acesse: `http://localhost:3000/test-firebase`
+Acessar: `http://localhost:3000/test-firebase`
 
 ### 8.2. Teste no Backend
 
@@ -306,31 +306,6 @@ Execute:
 cd backend
 source venv/bin/activate
 python test_firebase.py
-```
-
----
-
-## 📝 Passo 9: Estrutura de Pastas Final
-
-Após a configuração, sua estrutura deve estar assim:
-
-```
-project/
-├── backend/
-│   ├── app/
-│   │   └── services/
-│   │       └── firebase_service.py  ← NOVO
-│   ├── firebase-service-account.json  ← NOVO (não commitado)
-│   ├── main.py
-│   └── requirements.txt
-├── frontend/
-│   ├── app/
-│   ├── lib/
-│   │   └── firebase.ts  ← NOVO
-│   ├── .env.local  ← NOVO (não commitado)
-│   └── package.json
-└── docs/
-    └── firebase-setup.md  ← Este arquivo
 ```
 
 ---
