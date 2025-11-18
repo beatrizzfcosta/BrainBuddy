@@ -38,7 +38,5 @@ Thumbs.db
 # Docker
 *.log
 
-# Test files (opcional - descomente se não quiser versionar)
-# tests/create_sample_data.py
-
-.env
+# Test files 
+tests/create_sample_data.py
