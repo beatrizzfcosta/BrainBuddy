@@ -39,9 +39,9 @@ async def health():
 from app.api import (
     users, subjects, topics, slides, notes,
     ai_requests, study_sessions,
-    # youtube_suggestions,  # TODO: Será implementado por outra pessoa
+    youtube_suggestions, 
     # oauth,  # TODO: Será implementado por outra pessoa
-    # youtube,  # TODO: Será implementado por outra pessoa
+    youtube,  
     calendar, gemini
 )
 
@@ -53,15 +53,17 @@ app.include_router(slides.router, prefix="/api/slides", tags=["Slides"])
 app.include_router(notes.router, prefix="/api/notes", tags=["Notes"])
 app.include_router(ai_requests.router, prefix="/api/ai-requests", tags=["AI Requests"])
 app.include_router(study_sessions.router, prefix="/api/study-sessions", tags=["Study Sessions"])
-# TODO: Será implementado por outra pessoa
-# app.include_router(youtube_suggestions.router, prefix="/api/youtube-suggestions", tags=["YouTube Suggestions"])
+app.include_router(youtube_suggestions.router, prefix="/api/youtube-suggestions", tags=["YouTube Suggestions"])
+app.include_router(youtube.router, prefix="/api/youtube", tags=["YouTube"])
+
 
 # Rotas de integração com serviços externos
-# TODO: Será implementado por outra pessoa
+app.include_router(youtube.router, prefix="/api/youtube", tags=["YouTube"])
+app.include_router(youtube_suggestions.router, prefix="/api/youtube-suggestions", tags=["YouTube Suggestions"])
 # app.include_router(oauth.router, prefix="/api/oauth", tags=["OAuth"])
-# app.include_router(youtube.router, prefix="/api/youtube", tags=["YouTube"])
 app.include_router(calendar.router, prefix="/api/calendar", tags=["Calendar"])
 app.include_router(gemini.router, prefix="/api/gemini", tags=["Gemini"])
+
 
 if __name__ == "__main__":
     import uvicorn
