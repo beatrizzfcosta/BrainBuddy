@@ -1,6 +1,5 @@
 """
 Rotas para integração com YouTube Data API
-TODO: Será implementado por outra pessoa
 """
 from fastapi import APIRouter
 

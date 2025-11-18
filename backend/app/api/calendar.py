@@ -24,7 +24,7 @@ class CalendarEventCreate(BaseModel):
 @router.post("/events")
 async def create_calendar_event(
     event: CalendarEventCreate,
-    access_token: str
+    access_token: str  # Query parameter: ?access_token=...
 ):
     """Cria um evento no Google Calendar"""
     event_data = {
@@ -57,7 +57,10 @@ async def create_calendar_event(
 
 
 @router.get("/events/{event_id}")
-async def get_calendar_event(event_id: str, access_token: str):
+async def get_calendar_event(
+    event_id: str,
+    access_token: str  # Query parameter: ?access_token=...
+):
     """Busca um evento do Google Calendar"""
     async with httpx.AsyncClient() as client:
         response = await client.get(
@@ -75,7 +78,10 @@ async def get_calendar_event(event_id: str, access_token: str):
 
 
 @router.delete("/events/{event_id}")
-async def delete_calendar_event(event_id: str, access_token: str):
+async def delete_calendar_event(
+    event_id: str,
+    access_token: str  # Query parameter: ?access_token=...
+):
     """Deleta um evento do Google Calendar"""
     async with httpx.AsyncClient() as client:
         response = await client.delete(
@@ -93,7 +99,9 @@ async def delete_calendar_event(event_id: str, access_token: str):
 
 
 @router.get("/calendars")
-async def list_calendars(access_token: str):
+async def list_calendars(
+    access_token: str  # Query parameter: ?access_token=...
+):
     """Lista os calendários do usuário"""
     async with httpx.AsyncClient() as client:
         response = await client.get(
