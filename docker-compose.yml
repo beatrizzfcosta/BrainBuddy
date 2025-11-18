@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: brainbudy-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Montar código para desenvolvimento (opcional - remover em produção)
+      - ./backend:/app
+      # Montar arquivo de credenciais do Firebase
+      - ./backend/firebase-service-account.json:/app/firebase-service-account.json:ro
+      # Excluir venv do volume para evitar conflitos (volume anônimo)
+      - /app/venv
+      - /app/__pycache__
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+    networks:
+      - brainbudy-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: brainbudy-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - brainbudy-network
+
+networks:
+  brainbudy-network:
+    driver: bridge
+

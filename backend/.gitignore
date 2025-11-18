@@ -14,6 +14,9 @@ build/
 # Firebase
 firebase-service-account.json
 
+# Scripts de teste/exemplo
+create_sample_data.py
+
 # Environment
 .env
 .env.local
