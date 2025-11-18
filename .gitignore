@@ -41,3 +41,4 @@ Thumbs.db
 # Test files (opcional - descomente se não quiser versionar)
 # tests/create_sample_data.py
 
+.env
