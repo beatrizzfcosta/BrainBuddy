@@ -1,7 +1,7 @@
 import os
 import logging
 from fastapi import APIRouter, HTTPException, status
-from googleapiclient.discovery import build
+from googleapiclient.discovery import build  
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,21 +10,28 @@ router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
-YOUTUBE_KEY = os.getenv("YOUTUBE_API_KEY")
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY") 
 
 
 def get_youtube_client():
-    if not YOUTUBE_KEY:
+    if not YOUTUBE_API_KEY:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="A variável YOUTUBE_API_KEY não foi encontrada."
+            detail="YOUTUBE_API_KEY não configurado"
         )
-    return build("youtube", "v3", developerKey=YOUTUBE_KEY)
+    try:
+        return build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+    except Exception as e:
+        logger.exception("Erro ao criar cliente do YouTube: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao inicializar cliente do YouTube: {str(e)}"
+        )
 
 
 @router.get("/search")
 def youtube_search(query: str, max_results: int = 5):
-   #Retorna apenas link e URL
+   #Pesquisa vídeos, retornando apenas título e link
     try:
         youtube = get_youtube_client()
 
