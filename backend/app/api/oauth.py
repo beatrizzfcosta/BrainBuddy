@@ -1,10 +1,89 @@
-"""
-Rotas para autenticação OAuth com Google
-TODO: Será implementado por outra pessoa
-"""
+import os
+from datetime import datetime
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+from google_auth_oauthlib.flow import Flow
+from google.oauth2 import id_token
+from google.auth.transport.requests import Request as GoogleRequest
+
+from app.services.firebase_service import db
 
 router = APIRouter()
 
-# TODO: Implementar autenticação OAuth com Google
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
+REDIRECT_URI = "http://localhost:3000/auth/callback"
+
+
+def create_flow():
+    return Flow.from_client_config(
+        {
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "project_id": "brainbuddy",
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "redirect_uris": [REDIRECT_URI],
+                "javascript_origins": ["http://localhost:3000"]
+            }
+        },
+        scopes=[
+            "openid",
+            "email",
+            "profile",
+            "https://www.googleapis.com/auth/calendar"
+        ],
+        redirect_uri=REDIRECT_URI
+    )
+
+@router.get("/login")
+async def login():
+    flow = create_flow()
+    auth_url, _ = flow.authorization_url(
+        access_type="offline",
+        prompt="consent",
+        include_granted_scopes="true",
+    )
+    return {"url": auth_url}
+
+@router.get("/callback")
+async def callback(code: str):
+    flow = create_flow()
+    flow.fetch_token(code=code)
+
+    credentials = flow.credentials
+
+    userinfo = id_token.verify_oauth2_token(
+        credentials.id_token, GoogleRequest(), GOOGLE_CLIENT_ID
+    )
+
+    user_id = userinfo.get("sub")
+
+    users_collection = db.collection("users")
+    user_ref = users_collection.document(user_id)
+    user_doc = user_ref.get()
+
+    user_data = {
+        "name": userinfo.get("name"),
+        "email": userinfo.get("email"),
+        "googleCalendarConnected": True if credentials.refresh_token else False,
+        "updatedAt": datetime.utcnow(),
+        "googleTokens": {
+            "access_token": credentials.token,
+            "refresh_token": credentials.refresh_token,
+            "expiry": credentials.expiry.isoformat(),
+        },
+    }
+
+    if not user_doc.exists:
+        user_data["createdAt"] = datetime.utcnow()
+        user_ref.set(user_data)
+    else:
+        existing = user_doc.to_dict()
+        user_data["createdAt"] = existing.get("createdAt")
+        user_ref.set(user_data, merge=True)
+
+    return JSONResponse({"id": user_id, "user": user_data})

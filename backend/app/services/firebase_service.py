@@ -7,11 +7,11 @@ from firebase_admin import credentials, firestore
 import os
 from pathlib import Path
 
-# Caminho para o arquivo de credenciais
+#Caminho para o arquivo de credenciais
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CREDENTIALS_PATH = BASE_DIR / "firebase-service-account.json"
 
-# Inicializar Firebase Admin apenas uma vez
+#Inicializar Firebase Admin apenas uma vez
 if not firebase_admin._apps:
     if CREDENTIALS_PATH.exists():
         cred = credentials.Certificate(str(CREDENTIALS_PATH))
@@ -23,7 +23,7 @@ if not firebase_admin._apps:
             f"e coloque-o na pasta backend/"
         )
 
-# Inicializar serviços
+#Inicializar serviços
 db = firestore.client()
 
 __all__ = ['db']
