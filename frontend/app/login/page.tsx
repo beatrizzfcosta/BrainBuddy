@@ -7,9 +7,13 @@ import { Button } from "@/app/components/ui/button";
 import GoogleIcon from "@/app/components/GoogleIcon";
 import brainbuddyLogo from "@/public/BrainBuddy.png";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,8 +21,45 @@ const LoginPage = () => {
     window.location.href = "/homepage";
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = "/";
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/oauth/login`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro do servidor: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.url) {
+        // Reset loading state before redirect to prevent stuck state
+        setGoogleLoading(false);
+        // Use setTimeout to ensure state update completes before navigation
+        setTimeout(() => {
+          window.location.href = data.url;
+        }, 0);
+      } else {
+        throw new Error("URL de autorização não encontrada na resposta");
+      }
+    } catch (error) {
+      console.error("Erro ao iniciar login com Google:", error);
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        setError("Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 8000.");
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Erro desconhecido ao iniciar login com Google");
+      }
+      setGoogleLoading(false);
+    }
   };
 
   return (

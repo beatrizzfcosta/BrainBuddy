@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from google_auth_oauthlib.flow import Flow
@@ -32,8 +32,8 @@ def create_flow():
         },
         scopes=[
             "openid",
-            "email",
-            "profile",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/calendar"
         ],
         redirect_uri=REDIRECT_URI
@@ -54,6 +54,7 @@ async def callback(code: str):
     flow = create_flow()
     flow.fetch_token(code=code)
 
+
     credentials = flow.credentials
 
     userinfo = id_token.verify_oauth2_token(
@@ -70,20 +71,21 @@ async def callback(code: str):
         "name": userinfo.get("name"),
         "email": userinfo.get("email"),
         "googleCalendarConnected": True if credentials.refresh_token else False,
-        "updatedAt": datetime.utcnow(),
+        "updatedAt": datetime.now(timezone.utc),
         "googleTokens": {
             "access_token": credentials.token,
             "refresh_token": credentials.refresh_token,
-            "expiry": credentials.expiry.isoformat(),
+            "expiry": credentials.expiry.isoformat() if credentials.expiry else None,
         },
     }
 
     if not user_doc.exists:
-        user_data["createdAt"] = datetime.utcnow()
+        user_data["createdAt"] = datetime.now(timezone.utc)
         user_ref.set(user_data)
     else:
         existing = user_doc.to_dict()
         user_data["createdAt"] = existing.get("createdAt")
         user_ref.set(user_data, merge=True)
+
 
     return JSONResponse({"id": user_id, "user": user_data})
