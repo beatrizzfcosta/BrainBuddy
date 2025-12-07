@@ -4,16 +4,17 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, VariantProps } from "class-variance-authority";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-lg font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-primary text-white hover:bg-primary/90",
-        google: "bg-google border border-border hover:bg-google-hover",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        google: "bg-google hover:bg-google-hover",
+        destructive: "bg-red-600 text-white hover:bg-red-700",
       },
       size: {
-        default: "h-12 px-6",
-        lg: "h-14 px-8",
+        default: "h-10 px-4 py-2",
+        lg: "h-12 px-6",
       },
     },
     defaultVariants: {
