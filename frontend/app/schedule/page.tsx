@@ -5,9 +5,9 @@ import { ArrowLeft, Calendar } from "lucide-react";
 import Sidebar from "@/app/components/SideBar";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 
-export default function SchedulePage() {
+function ScheduleContent() {
   const router = useRouter();
   const search = useSearchParams();
 
@@ -59,5 +59,20 @@ export default function SchedulePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SchedulePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex pl-72">
+        <Sidebar history={[]} />
+        <main className="flex-1 p-6 flex items-center justify-center">
+          <div className="text-center">Loading...</div>
+        </main>
+      </div>
+    }>
+      <ScheduleContent />
+    </Suspense>
   );
 }

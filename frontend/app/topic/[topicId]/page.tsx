@@ -2,13 +2,38 @@
 
 import { ArrowLeft, Pencil } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import Sidebar from "@/app/components/SideBar";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
+import { HistoryItem } from "@/app/types";
 
-export default function TopicDetailPage() {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+interface Topic {
+  topicId: string;
+  title: string;
+  description?: string;
+  subjectId: string;
+}
+
+interface Note {
+  noteId: string;
+  content: string;
+  source: string;
+  topicId: string;
+  createdAt: string;
+}
+
+interface YouTubeSuggestion {
+  suggestionId: string;
+  title: string;
+  url: string;
+  topicId: string;
+}
+
+function TopicDetailContent() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -17,78 +42,477 @@ export default function TopicDetailPage() {
   const subjectId = searchParams.get("subjectId") as string;
 
   const [content, setContent] = useState("");
-  const [youtubeLink, setYoutubeLink] = useState("www.youtube.com");
+  const [youtubeLinks, setYoutubeLinks] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [topic, setTopic] = useState<Topic | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const mockTopic = {
-    name: topicId,
-    subjectName: "IAA",
+  const loadHistory = useCallback(async (userId: string) => {
+    try {
+      const subjectsResponse = await fetch(`${API_BASE_URL}/api/subjects/user/${userId}`);
+      if (!subjectsResponse.ok) {
+        throw new Error("Erro ao buscar subjects");
+      }
+      const subjects = await subjectsResponse.json();
+
+      const historyItems: HistoryItem[] = [];
+      for (const subject of subjects.slice(0, 10)) {
+        try {
+          const subjectId = subject.subjectId || subject.id;
+          const topicsResponse = await fetch(`${API_BASE_URL}/api/topics/subject/${subjectId}`);
+          if (topicsResponse.ok) {
+            const topics = await topicsResponse.json();
+            topics.slice(0, 3).forEach((topic: any) => {
+              historyItems.push({
+                id: topic.topicId || topic.id,
+                subjectAbbr: subject.name.substring(0, 3).toUpperCase(),
+                topicName: topic.title,
+              });
+            });
+          }
+        } catch (error) {
+          console.error(`Erro ao buscar topics do subject:`, error);
+        }
+      }
+
+      setHistory(historyItems);
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error);
+      setHistory([]);
+    }
+  }, []);
+
+  const loadTopic = useCallback(async (topicId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/topics/${topicId}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError("Topic não encontrado");
+          return;
+        }
+        throw new Error("Erro ao buscar topic");
+      }
+      const data = await response.json();
+      setTopic(data);
+    } catch (error) {
+      console.error("Erro ao carregar topic:", error);
+      setError("Erro ao carregar topic");
+    }
+  }, []);
+
+  const loadNotes = useCallback(async (topicId: string, currentTopic: Topic | null) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notes/topic/${topicId}`);
+      if (!response.ok) {
+        throw new Error("Erro ao buscar notes");
+      }
+      const notes: Note[] = await response.json();
+      
+      // Buscar a primeira note com conteúdo gerado por IA, ou a primeira note disponível
+      const aiNote = notes.find(note => note.source === "AI-generated") || notes[0];
+      if (aiNote && aiNote.content) {
+        setContent(aiNote.content);
+      } else if (notes.length === 0 && currentTopic) {
+        // Se não houver notes, gerar conteúdo automaticamente
+        await generateContent(topicId, currentTopic);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar notes:", error);
+      // Tentar gerar conteúdo mesmo se falhar ao buscar notes
+      if (currentTopic) {
+        await generateContent(topicId, currentTopic);
+      }
+    }
+  }, []);
+
+  const loadYouTubeSuggestions = useCallback(async (topicId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/youtube-suggestions/topic/${topicId}`);
+      if (!response.ok) {
+        throw new Error("Erro ao buscar sugestões do YouTube");
+      }
+      const suggestions: YouTubeSuggestion[] = await response.json();
+      
+      if (suggestions.length > 0) {
+        setYoutubeLinks(suggestions.map(s => s.url));
+      } else {
+        // Se não houver sugestões, gerar automaticamente
+        await generateYouTubeSuggestions(topicId);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar sugestões do YouTube:", error);
+      // Tentar gerar sugestões mesmo se falhar
+      await generateYouTubeSuggestions(topicId);
+    }
+  }, []);
+
+  const generateContent = useCallback(async (topicId: string, currentTopic: Topic) => {
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      // Primeiro, criar uma note vazia para o topic
+      const noteResponse = await fetch(`${API_BASE_URL}/api/notes/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: "",
+          source: "AI-generated",
+          topicId: topicId,
+        }),
+      });
+
+      if (!noteResponse.ok) {
+        throw new Error("Erro ao criar note");
+      }
+
+      const note = await noteResponse.json();
+
+      // Gerar conteúdo com Gemini
+      const geminiResponse = await fetch(`${API_BASE_URL}/api/gemini/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: `Explique de forma clara e didática sobre: ${currentTopic.title}`,
+          topic_id: topicId,
+          context: currentTopic.description || undefined,
+        }),
+      });
+
+      if (!geminiResponse.ok) {
+        throw new Error("Erro ao gerar conteúdo com Gemini");
+      }
+
+      const geminiData = await geminiResponse.json();
+      const generatedContent = geminiData.response;
+
+      // Atualizar a note com o conteúdo gerado
+      const updateResponse = await fetch(`${API_BASE_URL}/api/notes/${note.noteId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: generatedContent,
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error("Erro ao atualizar note");
+      }
+
+      setContent(generatedContent);
+    } catch (error) {
+      console.error("Erro ao gerar conteúdo:", error);
+      setError("Erro ao gerar conteúdo. Tente novamente.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }, []);
+
+  const generateYouTubeSuggestions = useCallback(async (topicId: string) => {
+    try {
+      // Gerar uma sugestão do YouTube
+      const response = await fetch(`${API_BASE_URL}/api/youtube-suggestions/suggest?topicId=${topicId}`);
+      
+      if (response.ok) {
+        const suggestion = await response.json();
+        setYoutubeLinks(prev => [...prev, suggestion.url]);
+        
+        // Tentar gerar mais algumas sugestões
+        for (let i = 0; i < 2; i++) {
+          try {
+            const additionalResponse = await fetch(`${API_BASE_URL}/api/youtube-suggestions/suggest?topicId=${topicId}`);
+            if (additionalResponse.ok) {
+              const additionalSuggestion = await additionalResponse.json();
+              setYoutubeLinks(prev => [...prev, additionalSuggestion.url]);
+            }
+          } catch (error) {
+            console.error("Erro ao gerar sugestão adicional:", error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao gerar sugestões do YouTube:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkAuthAndLoadData = async () => {
+      const storedUserId = localStorage.getItem("userId");
+      const storedUser = localStorage.getItem("user");
+
+      if (!storedUserId || !storedUser) {
+        router.push("/login");
+        return;
+      }
+
+      setUserId(storedUserId);
+
+      try {
+        await Promise.all([
+          loadTopic(topicId),
+          loadHistory(storedUserId),
+        ]);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthAndLoadData();
+  }, [topicId, router, loadTopic, loadHistory]);
+
+  useEffect(() => {
+    if (topic) {
+      loadNotes(topicId, topic);
+      loadYouTubeSuggestions(topicId);
+    }
+  }, [topic, topicId, loadNotes, loadYouTubeSuggestions]);
+
+  const handleBack = () => {
+    if (subjectId) router.push(`/subject/${subjectId}`);
+    else router.push("/homepage");
   };
-
-  const handleBack = () => router.push(`/subject/${subjectId}`);
 
   const handleScheduleSession = () =>
     router.push(`/schedule?subjectId=${subjectId}&topicId=${topicId}`);
 
+  const handleSaveContent = async () => {
+    if (!topic) return;
+
+    try {
+      // Buscar notes existentes
+      const notesResponse = await fetch(`${API_BASE_URL}/api/notes/topic/${topicId}`);
+      if (notesResponse.ok) {
+        const notes: Note[] = await notesResponse.json();
+        const aiNote = notes.find(note => note.source === "AI-generated") || notes[0];
+
+        if (aiNote) {
+          // Atualizar note existente
+          await fetch(`${API_BASE_URL}/api/notes/${aiNote.noteId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              content: content,
+            }),
+          });
+        } else {
+          // Criar nova note
+          await fetch(`${API_BASE_URL}/api/notes/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              content: content,
+              source: "manual",
+              topicId: topicId,
+            }),
+          });
+        }
+      }
+
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Erro ao salvar conteúdo:", error);
+      setError("Erro ao salvar conteúdo");
+    }
+  };
+
+  const handleDeleteTopic = async () => {
+    if (!confirm("Tem certeza que deseja deletar este topic? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/topics/${topicId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao deletar topic");
+      }
+
+      if (subjectId) {
+        router.push(`/subject/${subjectId}`);
+      } else {
+        router.push("/homepage");
+      }
+    } catch (error) {
+      console.error("Erro ao deletar topic:", error);
+      setError("Erro ao deletar topic");
+      setIsDeleting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex pl-72">
+        <Sidebar history={history} />
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center">Loading...</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error && !topic) {
+    return (
+      <div className="min-h-screen bg-background flex pl-72">
+        <Sidebar history={history} />
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center text-destructive">{error}</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!topic) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background flex pl-72">
-      <Sidebar history={[]} />
+      <Sidebar history={history} />
 
       <main className="flex-1 p-6 flex items-center justify-center">
         <div className="bg-card p-10 rounded-2xl shadow-card max-w-2xl w-full relative">
-
           <button
             onClick={handleBack}
-            className="absolute top-6 left-6 text-primary"
+            className="absolute top-6 left-6 text-primary hover:text-primary/80 transition-colors"
           >
             <ArrowLeft size={24} />
           </button>
 
           <div className="text-center mb-6 mt-4">
-            <h1 className="text-3xl font-bold">{mockTopic.subjectName}</h1>
-            <p className="text-muted-foreground">
-              Topic: <span className="font-bold">{mockTopic.name}</span>
-            </p>
+            <h1 className="text-3xl font-bold">{topic.title}</h1>
+            {topic.description && (
+              <p className="text-muted-foreground mt-2">{topic.description}</p>
+            )}
           </div>
 
-         <div className="relative w-full">
-        <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Generated content..."
-            className="min-h-[120px] border-primary/30 resize-none pr-12"
-            readOnly={!isEditing}
-  />
+          {error && (
+            <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg text-center">
+              {error}
+            </div>
+          )}
 
-  {/* Edit Icon */}
-  <button
-    onClick={() => setIsEditing(true)}
-    className="absolute top-3 right-3 text-primary hover:text-primary/80 transition-colors"
-  >
-    <Pencil size={18} />
-  </button>
-</div>
+          {isGenerating && (
+            <div className="mb-4 p-3 bg-primary/10 text-primary text-sm rounded-lg text-center">
+              Gerando conteúdo com IA...
+            </div>
+          )}
 
+          <div className="relative w-full">
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={isGenerating ? "Gerando conteúdo..." : "Conteúdo gerado aparecerá aqui..."}
+              className="min-h-[200px] border-primary/30 resize-none pr-12"
+              readOnly={!isEditing || isGenerating}
+            />
 
-          <h2 className="font-bold text-center mt-5 mb-4">Youtube Link</h2>
+            {!isEditing && !isGenerating && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="absolute top-3 right-3 text-primary hover:text-primary/80 transition-colors"
+              >
+                <Pencil size={18} />
+              </button>
+            )}
 
-          <Textarea
-            value={youtubeLink}
-            onChange={(e) => setYoutubeLink(e.target.value)}
-            className="text-center border-primary/30"
-          />
+            {isEditing && (
+              <div className="flex gap-2 mt-2">
+                <Button onClick={handleSaveContent} className="flex-1">
+                  Salvar
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setIsEditing(false);
+                    // Recarregar conteúdo original
+                    if (topic) {
+                      loadNotes(topicId, topic);
+                    }
+                  }} 
+                  className="flex-1 bg-background border border-primary/30 text-foreground hover:bg-background/80"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <h2 className="font-bold text-center mt-5 mb-4">YouTube Links</h2>
+
+          {youtubeLinks.length === 0 ? (
+            <div className="text-center text-muted-foreground py-4">
+              Carregando sugestões do YouTube...
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {youtubeLinks.map((link, index) => (
+                <a
+                  key={index}
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 border border-primary/30 rounded-lg hover:border-primary/50 transition text-center text-primary hover:underline"
+                >
+                  {link}
+                </a>
+              ))}
+            </div>
+          )}
 
           <div className="flex flex-col items-center gap-4 mt-8">
-            <Button className="w-56" onClick={handleScheduleSession}>
+            <Button 
+              className="w-56" 
+              onClick={handleScheduleSession}
+              disabled={!subjectId}
+            >
               Schedule Study Session
             </Button>
 
-            <Button variant="destructive" className="w-56">
-              Delete Topic
+            <Button 
+              variant="destructive" 
+              className="w-56"
+              onClick={handleDeleteTopic}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete Topic"}
             </Button>
           </div>
         </div>
       </main>
     </div>
+  );
+}
+
+export default function TopicDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex pl-72">
+        <Sidebar history={[]} />
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center">Loading...</div>
+        </main>
+      </div>
+    }>
+      <TopicDetailContent />
+    </Suspense>
   );
 }
