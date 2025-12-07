@@ -80,16 +80,126 @@ export default function Dashboard() {
     }
   }, []);
 
+  const createCalendarEventForSession = useCallback(async (session: any, topic: any, accessToken: string) => {
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const eventData = {
+        summary: `Estudo: ${topic.title}`,
+        description: `Sessão de estudo sobre ${topic.title}`,
+        start_time: session.startTime,
+        end_time: session.endTime,
+        timezone: timezone,
+      };
+
+      const calendarResponse = await fetch(
+        `${API_BASE_URL}/api/calendar/events?access_token=${encodeURIComponent(accessToken)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(eventData),
+        }
+      );
+
+      if (calendarResponse.ok) {
+        const calendarEvent = await calendarResponse.json();
+        // Atualizar study session com o ID do evento do calendar
+        await fetch(`${API_BASE_URL}/api/study-sessions/${session.sessionId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            calendarEvent: calendarEvent.id,
+          }),
+        });
+        return true;
+      }
+    } catch (error) {
+      console.error(`Erro ao criar evento no calendar para sessão ${session.sessionId}:`, error);
+    }
+    return false;
+  }, []);
+
   const loadStudySessions = useCallback(async (userId: string) => {
     try {
-      // TODO: Implementar quando a API de study sessions estiver pronta
-      // Por enquanto, manter vazio ou usar mock
-      setStudySessions([]);
+      const response = await fetch(`${API_BASE_URL}/api/study-sessions/user/${userId}`);
+      if (!response.ok) {
+        throw new Error("Erro ao buscar study sessions");
+      }
+      const sessions = await response.json();
+      
+      // Tentar obter access token para criar eventos no calendar
+      let accessToken: string | null = null;
+      try {
+        const tokenResponse = await fetch(`${API_BASE_URL}/api/users/${userId}/access-token`);
+        if (tokenResponse.ok) {
+          const tokenData = await tokenResponse.json();
+          accessToken = tokenData?.access_token || null;
+        }
+      } catch (error) {
+        console.warn("Access token não disponível para criar eventos no calendar");
+      }
+      
+      // Converter do formato do backend para o formato do frontend
+      const formattedSessions: StudySession[] = [];
+      
+      // Filtrar apenas sessões agendadas (scheduled) e que ainda não passaram
+      const now = new Date();
+      const scheduledSessions = sessions.filter((session: any) => {
+        const startTime = new Date(session.startTime);
+        return session.state === "scheduled" && startTime >= now;
+      });
+      
+      for (const session of scheduledSessions) {
+        try {
+          // Buscar o topic para obter informações
+          const topicResponse = await fetch(`${API_BASE_URL}/api/topics/${session.topicId}`);
+          if (topicResponse.ok) {
+            const topic = await topicResponse.json();
+            
+            // Buscar o subject do topic
+            const subjectResponse = await fetch(`${API_BASE_URL}/api/subjects/${topic.subjectId}`);
+            if (subjectResponse.ok) {
+              const subject = await subjectResponse.json();
+              
+              // Se a sessão não tem calendarEvent e temos access token, criar evento no calendar
+              if (!session.calendarEvent && accessToken) {
+                await createCalendarEventForSession(session, topic, accessToken);
+              }
+              
+              // Converter startTime para Date
+              const startTime = new Date(session.startTime);
+              const endTime = new Date(session.endTime);
+              
+              // Formatar data e hora
+              const date = startTime;
+              const time = `${startTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+              
+              formattedSessions.push({
+                id: session.sessionId,
+                subjectName: subject.name,
+                date: date,
+                time: time,
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Erro ao buscar informações do topic/subject para sessão ${session.sessionId}:`, error);
+          // Continuar mesmo se falhar ao buscar topic/subject
+        }
+      }
+      
+      // Ordenar por data (mais próximas primeiro)
+      formattedSessions.sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      setStudySessions(formattedSessions);
     } catch (error) {
       console.error("Erro ao carregar study sessions:", error);
       setStudySessions([]);
     }
-  }, []);
+  }, [createCalendarEventForSession]);
 
   // Verificar autenticação e carregar dados
   useEffect(() => {
@@ -126,8 +236,9 @@ export default function Dashboard() {
     if (pathname === "/homepage" && userId && !isLoading) {
       loadSubjects(userId);
       loadHistory(userId);
+      loadStudySessions(userId);
     }
-  }, [pathname, userId, isLoading, loadSubjects, loadHistory]);
+  }, [pathname, userId, isLoading, loadSubjects, loadHistory, loadStudySessions]);
 
   // Recarregar dados quando a página ficar visível novamente ou receber foco
   useEffect(() => {
@@ -137,6 +248,7 @@ export default function Dashboard() {
       if (document.visibilityState === "visible" && userId) {
         loadSubjects(userId);
         loadHistory(userId);
+        loadStudySessions(userId);
       }
     };
 
@@ -144,6 +256,7 @@ export default function Dashboard() {
       if (userId && pathname === "/homepage") {
         loadSubjects(userId);
         loadHistory(userId);
+        loadStudySessions(userId);
       }
     };
 
@@ -153,7 +266,7 @@ export default function Dashboard() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", handleFocus);
     };
-  }, [userId, pathname, loadSubjects, loadHistory]);
+  }, [userId, pathname, loadSubjects, loadHistory, loadStudySessions]);
 
   const handleAddSubject = () => {
     router.push("/newsubject");
@@ -163,12 +276,96 @@ export default function Dashboard() {
     router.push(`/subject/${subject.id}`);
   };
 
-  const handleConfirmSession = (sessionId: string) => {
-    console.log("Confirm session:", sessionId);
+  const handleConfirmSession = async (sessionId: string) => {
+    if (!userId) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/study-sessions/${sessionId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          state: "completed",
+        }),
+      });
+
+      if (response.ok) {
+        // Recarregar study sessions
+        await loadStudySessions(userId);
+      } else {
+        console.error("Erro ao confirmar sessão");
+      }
+    } catch (error) {
+      console.error("Erro ao confirmar sessão:", error);
+    }
   };
 
-  const handleCancelSession = (sessionId: string) => {
-    console.log("Cancel session:", sessionId);
+  const handleCancelSession = async (sessionId: string) => {
+    if (!userId) return;
+    
+    try {
+      // Primeiro, buscar a sessão para obter o calendarEvent
+      const sessionResponse = await fetch(`${API_BASE_URL}/api/study-sessions/${sessionId}`);
+      if (!sessionResponse.ok) {
+        console.error("Erro ao buscar sessão");
+        return;
+      }
+
+      const session = await sessionResponse.json();
+      const calendarEventId = session.calendarEvent;
+
+      // Se a sessão tem um evento no calendar, deletá-lo
+      if (calendarEventId) {
+        try {
+          // Buscar access token
+          const tokenResponse = await fetch(`${API_BASE_URL}/api/users/${userId}/access-token`);
+          if (tokenResponse.ok) {
+            const tokenData = await tokenResponse.json();
+            const accessToken = tokenData?.access_token;
+
+            if (accessToken) {
+              // Deletar evento do Google Calendar
+              const deleteCalendarResponse = await fetch(
+                `${API_BASE_URL}/api/calendar/events/${calendarEventId}?access_token=${encodeURIComponent(accessToken)}`,
+                {
+                  method: "DELETE",
+                }
+              );
+
+              if (deleteCalendarResponse.ok) {
+                console.log("Evento deletado do Google Calendar");
+              } else {
+                console.error("Erro ao deletar evento do calendar:", deleteCalendarResponse.status);
+              }
+            }
+          }
+        } catch (calendarError) {
+          console.error("Erro ao deletar evento do calendar:", calendarError);
+          // Continuar mesmo se falhar ao deletar do calendar
+        }
+      }
+
+      // Atualizar estado da sessão para "missed"
+      const updateResponse = await fetch(`${API_BASE_URL}/api/study-sessions/${sessionId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          state: "missed",
+        }),
+      });
+
+      if (updateResponse.ok) {
+        // Recarregar study sessions
+        await loadStudySessions(userId);
+      } else {
+        console.error("Erro ao cancelar sessão");
+      }
+    } catch (error) {
+      console.error("Erro ao cancelar sessão:", error);
+    }
   };
 
   // Mostrar loading enquanto verifica autenticação
