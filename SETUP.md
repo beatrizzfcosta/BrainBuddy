@@ -71,8 +71,41 @@ pip install fastapi uvicorn
 - **Backend API**: http://localhost:8000
 - **Documentação da API**: http://localhost:8000/docs
 
+### Variáveis de Ambiente Necessárias
+
+Antes de iniciar os containers, você precisa configurar as seguintes variáveis de ambiente:
+
+1. **GEMINI_API_KEY**: Chave da API do Google Gemini
+   - Obtenha em: https://aistudio.google.com/app/apikey
+   - Veja mais detalhes em: `backend/GEMINI_SETUP.md`
+
+2. **YOUTUBE_API_KEY**: Chave da API do YouTube Data API v3
+   - Obtenha em: https://console.cloud.google.com/apis/credentials
+   - Ative a "YouTube Data API v3" no Google Cloud Console
+   - Crie uma credencial do tipo "API Key"
+
+3. **GOOGLE_CLIENT_ID**, **GOOGLE_CLIENT_SECRET**, **GOOGLE_REDIRECT_URI**: Para autenticação OAuth
+   - Configure no Google Cloud Console
+
+#### Configurar Variáveis de Ambiente
+
+**Opção 1: Arquivo .env na raiz do projeto**
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```bash
+# Na raiz do projeto
+cat > .env << EOF
+GEMINI_API_KEY=sua-chave-gemini-aqui
+YOUTUBE_API_KEY=sua-chave-youtube-aqui
+GOOGLE_CLIENT_ID=seu-client-id-aqui
+GOOGLE_CLIENT_SECRET=seu-client-secret-aqui
+GOOGLE_REDIRECT_URI=http://localhost:8000/oauth/callback
+EOF
+```
 ### Notas Importantes
 
 - O arquivo `firebase-service-account.json` deve estar presente na pasta `backend/` para o backend funcionar
 - Se as portas 3000 ou 8000 estiverem em uso, altere-as no `docker-compose.yml`
+- **IMPORTANTE**: Sem as chaves de API configuradas, as funcionalidades de Gemini e YouTube não funcionarão
 
