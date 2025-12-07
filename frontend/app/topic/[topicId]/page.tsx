@@ -5,33 +5,10 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback, Suspense } from "react";
 import Sidebar from "@/app/components/SideBar";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
-import { HistoryItem } from "@/app/types";
+import { HistoryItem, Topic, Note, YouTubeSuggestion } from "@/app/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-interface Topic {
-  topicId: string;
-  title: string;
-  description?: string;
-  subjectId: string;
-}
-
-interface Note {
-  noteId: string;
-  content: string;
-  source: string;
-  topicId: string;
-  createdAt: string;
-}
-
-interface YouTubeSuggestion {
-  suggestionId: string;
-  title: string;
-  url: string;
-  topicId: string;
-}
 
 function TopicDetailContent() {
   const router = useRouter();
@@ -72,6 +49,7 @@ function TopicDetailContent() {
                 id: topic.topicId || topic.id,
                 subjectAbbr: subject.name.substring(0, 3).toUpperCase(),
                 topicName: topic.title,
+                subjectId: subjectId,
               });
             });
           }

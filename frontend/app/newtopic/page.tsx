@@ -6,17 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/app/components/SideBar";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
-import { HistoryItem } from "@/app/types";
+import { HistoryItem, Subject } from "@/app/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-interface Subject {
-  subjectId: string;
-  name: string;
-  description: string;
-  userId: string;
-  createdAt: string;
-}
 
 function NewTopicContent() {
   const router = useRouter();
@@ -53,6 +45,7 @@ function NewTopicContent() {
                 id: topic.topicId || topic.id,
                 subjectAbbr: subject.name.substring(0, 3).toUpperCase(),
                 topicName: topic.title,
+                subjectId: subjectId,
               });
             });
           }
@@ -171,8 +164,8 @@ function NewTopicContent() {
 
       const newTopic = await response.json();
       
-      // Redirecionar para a página do topic criado
-      router.push(`/topic/${newTopic.topicId}?subjectId=${subjectId}`);
+      // Redirecionar para a homepage após criar o tópico
+      router.push("/homepage");
     } catch (error) {
       console.error("Erro ao criar topic:", error);
       if (error instanceof Error) {

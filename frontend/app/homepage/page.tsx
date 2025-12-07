@@ -65,6 +65,7 @@ export default function Dashboard() {
                 id: topic.topicId || topic.id,
                 subjectAbbr: subject.name.substring(0, 3).toUpperCase(),
                 topicName: topic.title,
+                subjectId: subjectId,
               });
             });
           }

@@ -6,16 +6,9 @@ import Sidebar from "@/app/components/SideBar";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { useState, Suspense, useEffect, useCallback } from "react";
-import { HistoryItem } from "@/app/types";
+import { HistoryItem, Topic } from "@/app/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-interface Topic {
-  topicId: string;
-  title: string;
-  description?: string;
-  subjectId: string;
-}
 
 function ScheduleContent() {
   const router = useRouter();
@@ -75,6 +68,7 @@ function ScheduleContent() {
                 id: topic.topicId || topic.id,
                 subjectAbbr: subject.name.substring(0, 3).toUpperCase(),
                 topicName: topic.title,
+                subjectId: subjectId,
               });
             });
           }
@@ -332,14 +326,8 @@ function ScheduleContent() {
       }
 
       if (createdSessions.length > 0) {
-        const calendarSuccess = accessToken ? " e eventos criados no Google Calendar" : "";
-        // Redirecionar para a página do topic após criar
-        setTimeout(() => {
-          router.push(`/topic/${topicId}?subjectId=${subjectId}`);
-        }, 1000);
-        // Mostrar mensagem de sucesso temporariamente
-        setError(null);
-        alert(`${createdSessions.length} sessões de estudo criadas${calendarSuccess}!`);
+        // Redirecionar para a homepage após criar
+        router.push("/homepage");
       } else {
         setError("Erro ao criar sessões de estudo");
       }

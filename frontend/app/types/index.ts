@@ -1,9 +1,33 @@
 export interface Subject {
-  id: string;
+  id?: string;
+  subjectId?: string;
   name: string;
   description: string;
   userId: string;
-  createdAt: Date;
+  createdAt: Date | string;
+}
+
+export interface Topic {
+  topicId?: string;
+  id?: string;
+  title: string;
+  description?: string;
+  subjectId: string;
+}
+
+export interface Note {
+  noteId: string;
+  content: string;
+  source: string;
+  topicId: string;
+  createdAt: string;
+}
+
+export interface YouTubeSuggestion {
+  suggestionId: string;
+  title: string;
+  url: string;
+  topicId: string;
 }
 
 export interface StudySession {
@@ -17,4 +41,5 @@ export interface HistoryItem {
   id: string;
   subjectAbbr: string;
   topicName: string;
+  subjectId?: string;
 }

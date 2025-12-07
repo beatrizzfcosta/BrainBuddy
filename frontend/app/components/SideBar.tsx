@@ -1,5 +1,8 @@
+"use client";
+
 import { Menu } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { HistoryItem } from "@/app/types";
 
 interface SidebarProps {
@@ -7,6 +10,16 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ history }: SidebarProps) => {
+  const router = useRouter();
+
+  const handleHistoryItemClick = (item: HistoryItem) => {
+    const topicId = item.id;
+    if (topicId) {
+      const subjectIdParam = item.subjectId ? `?subjectId=${item.subjectId}` : "";
+      router.push(`/topic/${topicId}${subjectIdParam}`);
+    }
+  };
+
   return (
     <aside className="fixed left-0 top-0 h-full w-72 bg-card rounded-r-2xl p-6 shadow-card flex flex-col">
       <div className="flex items-center justify-between mb-8">
@@ -28,7 +41,8 @@ const Sidebar = ({ history }: SidebarProps) => {
         {history.map((item) => (
           <button
             key={item.id}
-            className="w-full text-left py-2 px-1 text-muted-foreground hover:text-foreground transition-colors text-sm border-b border-border/50"
+            onClick={() => handleHistoryItemClick(item)}
+            className="w-full text-left py-2 px-1 text-muted-foreground hover:text-foreground transition-colors text-sm border-b border-border/50 cursor-pointer"
           >
             {item.subjectAbbr} - {item.topicName}
           </button>

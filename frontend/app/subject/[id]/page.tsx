@@ -12,24 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { HistoryItem } from "@/app/types";
+import { HistoryItem, Subject, Topic } from "@/app/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-interface Subject {
-  subjectId: string;
-  name: string;
-  description: string;
-  userId: string;
-  createdAt: string;
-}
-
-interface Topic {
-  topicId: string;
-  title: string;
-  description?: string;
-  subjectId: string;
-}
 
 export default function SubjectDetailPage() {
   const params = useParams();
@@ -65,6 +50,7 @@ export default function SubjectDetailPage() {
                 id: topic.topicId || topic.id,
                 subjectAbbr: subject.name.substring(0, 3).toUpperCase(),
                 topicName: topic.title,
+                subjectId: subjectId,
               });
             });
           }
@@ -144,7 +130,7 @@ export default function SubjectDetailPage() {
 
   const handleSearch = () => {
     if (!selectedTopic) return;
-    const topic = topics.find((t) => t.topicId === selectedTopic);
+    const topic = topics.find((t) => (t.topicId || t.id) === selectedTopic);
     if (topic) {
       router.push(`/topic/${selectedTopic}?subjectId=${id}`);
     }
@@ -249,11 +235,14 @@ export default function SubjectDetailPage() {
                       No topics available
                     </SelectItem>
                   ) : (
-                    topics.map((topic) => (
-                      <SelectItem key={topic.topicId} value={topic.topicId}>
-                        {topic.title}
-                      </SelectItem>
-                    ))
+                    topics.map((topic) => {
+                      const topicId = topic.topicId || topic.id || "";
+                      return (
+                        <SelectItem key={topicId} value={topicId}>
+                          {topic.title}
+                        </SelectItem>
+                      );
+                    })
                   )}
                 </SelectContent>
               </Select>
