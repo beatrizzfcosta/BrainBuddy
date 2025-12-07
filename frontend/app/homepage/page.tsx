@@ -1,58 +1,165 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Sidebar from "@/app/components/SideBar";
 import SubjectCard from "@/app/components/SubjectCard";
 import StudySessionCard from "@/app/components/StudySessionCard";
 import { Subject, StudySession, HistoryItem } from "@/app/types";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
-//Mock data
-const mockHistory: HistoryItem[] = [
-  { id: "1", subjectAbbr: "IAA", topicName: "SVM" },
-];
-
-const mockSubjects: Subject[] = [
-  { id: "1", name: "IAA", description: "Inteligência Artificial Aplicada", userId: "1", createdAt: new Date() },
-];
-
-const mockStudySessions: StudySession[] = [
-  { id: "1", subjectName: "SVM", date: new Date("2025-11-07"), time: "2pm" },
-];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function Dashboard() {
   const router = useRouter();
+  const pathname = usePathname();
 
-  const [subjects] = useState(mockSubjects);
-  const [studySessions] = useState(mockStudySessions);
-  const [history] = useState(mockHistory);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [studySessions, setStudySessions] = useState<StudySession[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Verificar autenticação ao carregar a página
+  const loadSubjects = useCallback(async (userId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/subjects/user/${userId}`);
+      if (!response.ok) {
+        throw new Error("Erro ao buscar subjects");
+      }
+      const data = await response.json();
+      
+      // Converter do formato do backend para o formato do frontend
+      const formattedSubjects: Subject[] = data.map((subject: any) => ({
+        id: subject.subjectId || subject.id,
+        name: subject.name,
+        description: subject.description || "",
+        userId: subject.userId,
+        createdAt: subject.createdAt ? new Date(subject.createdAt) : new Date(),
+      }));
+
+      setSubjects(formattedSubjects);
+    } catch (error) {
+      console.error("Erro ao carregar subjects:", error);
+      setSubjects([]);
+    }
+  }, []);
+
+  const loadHistory = useCallback(async (userId: string) => {
+    try {
+      // Buscar todos os subjects do usuário
+      const subjectsResponse = await fetch(`${API_BASE_URL}/api/subjects/user/${userId}`);
+      if (!subjectsResponse.ok) {
+        throw new Error("Erro ao buscar subjects");
+      }
+      const subjects = await subjectsResponse.json();
+
+      // Para cada subject, buscar os topics
+      const historyItems: HistoryItem[] = [];
+      for (const subject of subjects.slice(0, 10)) {
+        try {
+          const subjectId = subject.subjectId || subject.id;
+          const topicsResponse = await fetch(`${API_BASE_URL}/api/topics/subject/${subjectId}`);
+          if (topicsResponse.ok) {
+            const topics = await topicsResponse.json();
+            topics.slice(0, 3).forEach((topic: any) => {
+              historyItems.push({
+                id: topic.topicId || topic.id,
+                subjectAbbr: subject.name.substring(0, 3).toUpperCase(),
+                topicName: topic.title,
+              });
+            });
+          }
+        } catch (error) {
+          console.error(`Erro ao buscar topics do subject:`, error);
+        }
+      }
+
+      setHistory(historyItems);
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error);
+      setHistory([]);
+    }
+  }, []);
+
+  const loadStudySessions = useCallback(async (userId: string) => {
+    try {
+      // TODO: Implementar quando a API de study sessions estiver pronta
+      // Por enquanto, manter vazio ou usar mock
+      setStudySessions([]);
+    } catch (error) {
+      console.error("Erro ao carregar study sessions:", error);
+      setStudySessions([]);
+    }
+  }, []);
+
+  // Verificar autenticação e carregar dados
   useEffect(() => {
-    const checkAuth = () => {
-      const userId = localStorage.getItem("userId");
-      const user = localStorage.getItem("user");
+    const checkAuthAndLoadData = async () => {
+      const storedUserId = localStorage.getItem("userId");
+      const storedUser = localStorage.getItem("user");
 
-      if (!userId || !user) {
-        // Se não estiver autenticado, redirecionar para login
+      if (!storedUserId || !storedUser) {
         router.push("/login");
         return;
       }
 
-      // Se estiver autenticado, mostrar a página
-      setIsLoading(false);
+      setUserId(storedUserId);
+
+      // Carregar dados do usuário
+      try {
+        await Promise.all([
+          loadSubjects(storedUserId),
+          loadHistory(storedUserId),
+          loadStudySessions(storedUserId),
+        ]);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    checkAuth();
-  }, [router]);
+    checkAuthAndLoadData();
+  }, [router, loadSubjects, loadHistory, loadStudySessions]);
+
+  // Recarregar dados quando voltar para a homepage (detecta mudança de rota)
+  useEffect(() => {
+    if (pathname === "/homepage" && userId && !isLoading) {
+      loadSubjects(userId);
+      loadHistory(userId);
+    }
+  }, [pathname, userId, isLoading, loadSubjects, loadHistory]);
+
+  // Recarregar dados quando a página ficar visível novamente ou receber foco
+  useEffect(() => {
+    if (!userId) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && userId) {
+        loadSubjects(userId);
+        loadHistory(userId);
+      }
+    };
+
+    const handleFocus = () => {
+      if (userId && pathname === "/homepage") {
+        loadSubjects(userId);
+        loadHistory(userId);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [userId, pathname, loadSubjects, loadHistory]);
 
   const handleAddSubject = () => {
     router.push("/newsubject");
   };
 
   const handleSubjectClick = (subject: Subject) => {
-    console.log("Subject clicked:", subject.name);
     router.push(`/subject/${subject.id}`);
   };
 
