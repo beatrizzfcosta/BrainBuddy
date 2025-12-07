@@ -28,7 +28,7 @@ export default function Dashboard() {
   const [history] = useState(mockHistory);
 
   const handleAddSubject = () => {
-    console.log("Add subject clicked");
+    router.push("/newsubject");
   };
 
   const handleSubjectClick = (subject: Subject) => {
