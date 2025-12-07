@@ -37,7 +37,11 @@ export default function SubjectDetailPage() {
 
   const handleBack = () => router.push("/homepage");
 
-  const handleSearch = () => console.log("Search topic:", selectedTopic);
+ const handleSearch = () => {
+  if (!selectedTopic) return;
+  router.push(`/topic/${selectedTopic}`);
+};
+
  const handleCreateTopic = () => router.push(`/newtopic`);
   const handleDeleteSubject = () => console.log("Delete subject:", id);
 
