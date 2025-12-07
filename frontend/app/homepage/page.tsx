@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/app/components/SideBar";
 import SubjectCard from "@/app/components/SubjectCard";
 import StudySessionCard from "@/app/components/StudySessionCard";
@@ -26,6 +26,26 @@ export default function Dashboard() {
   const [subjects] = useState(mockSubjects);
   const [studySessions] = useState(mockStudySessions);
   const [history] = useState(mockHistory);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    const checkAuth = () => {
+      const userId = localStorage.getItem("userId");
+      const user = localStorage.getItem("user");
+
+      if (!userId || !user) {
+        // Se não estiver autenticado, redirecionar para login
+        router.push("/login");
+        return;
+      }
+
+      // Se estiver autenticado, mostrar a página
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, [router]);
 
   const handleAddSubject = () => {
     router.push("/newsubject");
@@ -43,6 +63,15 @@ export default function Dashboard() {
   const handleCancelSession = (sessionId: string) => {
     console.log("Cancel session:", sessionId);
   };
+
+  // Mostrar loading enquanto verifica autenticação
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pl-80">

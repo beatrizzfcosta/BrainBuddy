@@ -36,6 +36,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
+# Criar diretório de cache e dar permissões (antes de mudar para usuário nextjs)
+RUN mkdir -p .next/cache && \
+    chown -R nextjs:nodejs .next && \
+    chown -R nextjs:nodejs /app
+
 USER nextjs
 
 EXPOSE 3000
