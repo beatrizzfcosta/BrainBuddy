@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import brainbuddyLogo from "@/public/BrainBuddy.png";
@@ -10,9 +10,18 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const CallbackContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
+    // Garantir que o callback execute apenas uma vez
+    if (hasProcessed.current) {
+      return;
+    }
+
     const handleCallback = async () => {
+      hasProcessed.current = true;
+
+      // Extrair valores dentro do efeito para evitar dependências desnecessárias
       const code = searchParams.get("code");
       const error = searchParams.get("error");
 
@@ -58,7 +67,10 @@ const CallbackContent = () => {
     };
 
     handleCallback();
-  }, [searchParams, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // searchParams é omitido intencionalmente: usamos useRef para garantir execução única
+    // e os valores da URL não mudam após o primeiro render
+  }, [router]);
 
   // Mostrar apenas logo e loading enquanto processa
   return (
