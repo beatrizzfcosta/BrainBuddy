@@ -84,8 +84,19 @@ async def callback(code: str):
         user_ref.set(user_data)
     else:
         existing = user_doc.to_dict()
-        user_data["createdAt"] = existing.get("createdAt")
+        existing_created_at = existing.get("createdAt")
+        # Se createdAt do Firebase for um timestamp, manter como está
+        if existing_created_at:
+            user_data["createdAt"] = existing_created_at
+        else:
+            user_data["createdAt"] = datetime.now(timezone.utc)
         user_ref.set(user_data, merge=True)
 
+    # Converter datetimes para strings ISO antes de retornar
+    response_user_data = {
+        **user_data,
+        "updatedAt": user_data["updatedAt"].isoformat() if isinstance(user_data["updatedAt"], datetime) else user_data["updatedAt"],
+        "createdAt": user_data["createdAt"].isoformat() if isinstance(user_data["createdAt"], datetime) else user_data["createdAt"],
+    }
 
-    return JSONResponse({"id": user_id, "user": user_data})
+    return JSONResponse({"id": user_id, "user": response_user_data})
