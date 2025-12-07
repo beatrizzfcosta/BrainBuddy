@@ -40,12 +40,7 @@ const LoginPage = () => {
       const data = await response.json();
       
       if (data.url) {
-        // Reset loading state before redirect to prevent stuck state
-        setGoogleLoading(false);
-        // Use setTimeout to ensure state update completes before navigation
-        setTimeout(() => {
-          window.location.href = data.url;
-        }, 0);
+        window.location.href = data.url;
       } else {
         throw new Error("URL de autorização não encontrada na resposta");
       }
