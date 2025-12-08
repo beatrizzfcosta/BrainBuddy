@@ -194,7 +194,7 @@ export default function NewSubject() {
               </label>
               <Input
                 type="text"
-                placeholder="e.g., 2 (Only Integer numbers)"
+                placeholder="Main content for the first semester."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="border-primary/30 focus:border-primary"
