@@ -391,7 +391,7 @@ function TopicDetailContent() {
 
           {isGenerating && (
             <div className="mb-4 p-3 bg-primary/10 text-primary text-sm rounded-lg text-center">
-              Gerando conteúdo com IA...
+          A Gerar conteúdo com IA...
             </div>
           )}
 
@@ -399,7 +399,7 @@ function TopicDetailContent() {
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={isGenerating ? "Gerando conteúdo..." : "Conteúdo gerado aparecerá aqui..."}
+              placeholder={isGenerating ? "A gerar conteúdo..." : "O conteúdo gerado aparecerá aqui..."}
               className="min-h-[200px] border-primary/30 resize-none pr-12"
               readOnly={!isEditing || isGenerating}
             />
@@ -438,7 +438,7 @@ function TopicDetailContent() {
 
           {youtubeLinks.length === 0 ? (
             <div className="text-center text-muted-foreground py-4">
-              Carregando sugestões do YouTube...
+              A carregar sugestões do YouTube...
             </div>
           ) : (
             <div className="space-y-2">
