@@ -108,6 +108,39 @@ function TopicDetailContent() {
     }
   }, []);
 
+  const generateYouTubeSuggestions = useCallback(async (topicId: string) => {
+    try {
+      const MAX_SUGGESTIONS = 5;
+      
+      // Gerar sugestões até atingir o limite de 5
+      for (let i = 0; i < MAX_SUGGESTIONS; i++) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/youtube-suggestions/suggest?topicId=${topicId}`);
+          if (response.ok) {
+            const suggestion = await response.json();
+            setYoutubeLinks(prev => {
+              // Verificar se já temos 5 sugestões
+              if (prev.length >= MAX_SUGGESTIONS) {
+                return prev;
+              }
+              // Adicionar nova sugestão e garantir que não exceda 5
+              const updated = [...prev, suggestion.url];
+              return updated.slice(0, MAX_SUGGESTIONS);
+            });
+          } else if (response.status === 400) {
+            // Limite atingido no backend
+            break;
+          }
+        } catch (error) {
+          console.error("Erro ao gerar sugestão:", error);
+          break;
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao gerar sugestões do YouTube:", error);
+    }
+  }, []);
+
   const loadYouTubeSuggestions = useCallback(async (topicId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/youtube-suggestions/topic/${topicId}`);
@@ -116,8 +149,11 @@ function TopicDetailContent() {
       }
       const suggestions: YouTubeSuggestion[] = await response.json();
       
-      if (suggestions.length > 0) {
-        setYoutubeLinks(suggestions.map(s => s.url));
+      // Limitar a 5 sugestões
+      const limitedSuggestions = suggestions.slice(0, 5);
+      
+      if (limitedSuggestions.length > 0) {
+        setYoutubeLinks(limitedSuggestions.map(s => s.url));
       } else {
         // Se não houver sugestões, gerar automaticamente
         await generateYouTubeSuggestions(topicId);
@@ -127,7 +163,7 @@ function TopicDetailContent() {
       // Tentar gerar sugestões mesmo se falhar
       await generateYouTubeSuggestions(topicId);
     }
-  }, []);
+  }, [generateYouTubeSuggestions]);
 
   const generateContent = useCallback(async (topicId: string, currentTopic: Topic) => {
     setIsGenerating(true);
@@ -194,33 +230,6 @@ function TopicDetailContent() {
       setError("Erro ao gerar conteúdo. Tente novamente.");
     } finally {
       setIsGenerating(false);
-    }
-  }, []);
-
-  const generateYouTubeSuggestions = useCallback(async (topicId: string) => {
-    try {
-      // Gerar uma sugestão do YouTube
-      const response = await fetch(`${API_BASE_URL}/api/youtube-suggestions/suggest?topicId=${topicId}`);
-      
-      if (response.ok) {
-        const suggestion = await response.json();
-        setYoutubeLinks(prev => [...prev, suggestion.url]);
-        
-        // Tentar gerar mais algumas sugestões
-        for (let i = 0; i < 2; i++) {
-          try {
-            const additionalResponse = await fetch(`${API_BASE_URL}/api/youtube-suggestions/suggest?topicId=${topicId}`);
-            if (additionalResponse.ok) {
-              const additionalSuggestion = await additionalResponse.json();
-              setYoutubeLinks(prev => [...prev, additionalSuggestion.url]);
-            }
-          } catch (error) {
-            console.error("Erro ao gerar sugestão adicional:", error);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Erro ao gerar sugestões do YouTube:", error);
     }
   }, []);
 
@@ -442,7 +451,7 @@ function TopicDetailContent() {
             </div>
           ) : (
             <div className="space-y-2">
-              {youtubeLinks.map((link, index) => (
+              {youtubeLinks.slice(0, 5).map((link, index) => (
                 <a
                   key={index}
                   href={link}

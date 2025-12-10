@@ -164,8 +164,14 @@ function NewTopicContent() {
 
       const newTopic = await response.json();
       
-      // Redirecionar para a homepage após criar o tópico
-      router.push("/homepage");
+      // Redirecionar para a página do topic criado
+      const topicId = newTopic.topicId || newTopic.id;
+      if (topicId) {
+        router.push(`/topic/${topicId}?subjectId=${subjectId}`);
+      } else {
+        // Fallback para homepage se não houver ID
+        router.push("/homepage");
+      }
     } catch (error) {
       console.error("Erro ao criar topic:", error);
       if (error instanceof Error) {

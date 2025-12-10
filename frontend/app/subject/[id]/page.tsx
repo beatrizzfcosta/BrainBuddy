@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil, Check, X } from "lucide-react";
 import Sidebar from "@/app/components/SideBar";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import { HistoryItem, Subject, Topic } from "@/app/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -29,6 +31,10 @@ export default function SubjectDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [editedDescription, setEditedDescription] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadHistory = useCallback(async (userId: string) => {
     try {
@@ -78,6 +84,8 @@ export default function SubjectDetailPage() {
       }
       const data = await response.json();
       setSubject(data);
+      setEditedName(data.name || "");
+      setEditedDescription(data.description || "");
     } catch (error) {
       console.error("Erro ao carregar subject:", error);
       setError("Erro ao carregar subject");
@@ -161,6 +169,64 @@ export default function SubjectDetailPage() {
     }
   };
 
+  const handleEditClick = () => {
+    if (subject) {
+      setEditedName(subject.name || "");
+      setEditedDescription(subject.description || "");
+      setIsEditing(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (subject) {
+      setEditedName(subject.name || "");
+      setEditedDescription(subject.description || "");
+      setIsEditing(false);
+      setError(null);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedName.trim()) {
+      setError("O nome do subject é obrigatório");
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/subjects/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: editedName.trim(),
+          description: editedDescription.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: "Erro ao atualizar subject" }));
+        throw new Error(errorData.detail || "Erro ao atualizar subject");
+      }
+
+      const updatedSubject = await response.json();
+      setSubject(updatedSubject);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Erro ao atualizar subject:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Erro ao atualizar subject. Tente novamente.");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex pl-72">
@@ -200,15 +266,64 @@ export default function SubjectDetailPage() {
           >
             <ArrowLeft size={24} />
           </button>
+          
+          {!isEditing ? (
+            <button
+              onClick={handleEditClick}
+              className="absolute top-6 right-6 text-primary hover:text-primary/80 transition-colors"
+              title="Edit name or description"
+            >
+              <Pencil size={20} />
+            </button>
+          ) : (
+            <div className="absolute top-6 right-6 flex gap-2">
+              <button
+                onClick={handleSaveEdit}
+                className="text-primary hover:text-primary/80 transition-colors"
+                title="Save changes"
+                disabled={isSaving}
+              >
+                <Check size={20} />
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                title="Cancel editing"
+                disabled={isSaving}
+              >
+                <X size={20} />
+              </button>
+            </div>
+          )}
 
           {/* Title Description */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-4 text-foreground">
-              {subject.name}
-            </h1>
-            <p className="text-muted-foreground leading-relaxed">
-              {subject.description || "No description available"}
-            </p>
+            {isEditing ? (
+              <div className="space-y-4 mt-8">
+                <Input
+                  type="text"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="text-3xl font-bold text-center border-primary/30 focus:border-primary"
+                  placeholder="Subject name"
+                />
+                <Textarea
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  className="text-center border-primary/30 focus:border-primary min-h-[100px] resize-none"
+                  placeholder="Description (optional)"
+                />
+              </div>
+            ) : (
+              <>
+                <h1 className="text-3xl font-bold mb-4 text-foreground">
+                  {subject.name}
+                </h1>
+                <p className="text-muted-foreground leading-relaxed">
+                  {subject.description || "No description available"}
+                </p>
+              </>
+            )}
           </div>
 
           {error && (

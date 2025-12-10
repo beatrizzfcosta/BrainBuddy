@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "@/app/components/SideBar";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import { HistoryItem } from "@/app/types";
 import { useRouter } from "next/navigation";
 
@@ -192,12 +193,11 @@ export default function NewSubject() {
               <label className="block text-foreground font-semibold mb-2">
                 Description
               </label>
-              <Input
-                type="text"
+              <Textarea
                 placeholder="Main content for the first semester."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="border-primary/30 focus:border-primary"
+                className="border-primary/30 focus:border-primary min-h-[120px]"
               />
             </div>
 

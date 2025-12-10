@@ -21,6 +21,7 @@ function ScheduleContent() {
   const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set());
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("15:00");
+  const [repeatWeeks, setRepeatWeeks] = useState("4");
   const [topic, setTopic] = useState<Topic | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,6 +144,12 @@ function ScheduleContent() {
       return;
     }
 
+    const weeksToRepeat = parseInt(repeatWeeks, 10);
+    if (isNaN(weeksToRepeat) || weeksToRepeat < 1 || weeksToRepeat > 52) {
+      setError("Por favor, informe um número válido de semanas (1-52)");
+      return;
+    }
+
     // Validar intervalo mínimo de 30 minutos
     const [startHours, startMinutes] = startTime.split(":").map(Number);
     const [endHours, endMinutes] = endTime.split(":").map(Number);
@@ -187,8 +194,9 @@ function ScheduleContent() {
         return nextDate;
       };
 
-      // Criar sessões para as próximas 4 semanas
-      for (let week = 0; week < 4; week++) {
+      // Criar sessões para o número de semanas especificado
+      const weeksToRepeat = parseInt(repeatWeeks, 10);
+      for (let week = 0; week < weeksToRepeat; week++) {
         for (const dayOfWeek of selectedDaysArray) {
           let sessionDate: Date;
           
@@ -466,6 +474,30 @@ function ScheduleContent() {
               )}
             </div>
 
+            {/* Campo para número de semanas */}
+            <div>
+              <h2 className="text-lg font-bold text-foreground mb-3 text-center">
+                Repeat for how many weeks?
+              </h2>
+              <div className="flex justify-center">
+                <div className="w-32">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="52"
+                    value={repeatWeeks}
+                    onChange={(e) => setRepeatWeeks(e.target.value)}
+                    className="text-center"
+                    disabled={isCreating}
+                    placeholder="4"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Number of weeks to repeat (1-52)
+              </p>
+            </div>
+
             <div className="flex justify-center mt-8">
               <Button 
                 onClick={handleAdd} 
@@ -474,7 +506,10 @@ function ScheduleContent() {
                   isCreating || 
                   selectedDays.size === 0 || 
                   !startTime || 
-                  !endTime
+                  !endTime ||
+                  !repeatWeeks ||
+                  parseInt(repeatWeeks, 10) < 1 ||
+                  parseInt(repeatWeeks, 10) > 52
                 }
               >
                 <Calendar className="mr-2" /> 
@@ -484,7 +519,7 @@ function ScheduleContent() {
 
             {isCreating && (
               <div className="mt-4 text-center text-sm text-muted-foreground">
-                Criando sessões para {selectedDays.size} dia(s) por semana para as próximas 4 semanas...
+                Criando sessões para {selectedDays.size} dia(s) por semana para as próximas {repeatWeeks} semana(s)...
               </div>
             )}
           </div>
