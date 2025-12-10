@@ -47,9 +47,17 @@ class YouTubeSuggestionService:
 
     @staticmethod
     def list_youtube_suggestions_by_topic(topic_id: str) -> List[YouTubeSuggestion]:
-        """Lista todas as YouTube suggestions de um topic"""
+        """Lista todas as YouTube suggestions de um topic (máximo de 5)"""
+        docs = db.collection(YouTubeSuggestionService.COLLECTION).where(
+            filter=FieldFilter("topicId", "==", topic_id)
+        ).limit(5).stream()
+        return [YouTubeSuggestion(suggestionId=doc.id, **doc.to_dict()) for doc in docs]
+
+    @staticmethod
+    def count_suggestions_by_topic(topic_id: str) -> int:
+        """Conta quantas sugestões existem para um topic"""
         docs = db.collection(YouTubeSuggestionService.COLLECTION).where(
             filter=FieldFilter("topicId", "==", topic_id)
         ).stream()
-        return [YouTubeSuggestion(suggestionId=doc.id, **doc.to_dict()) for doc in docs]
+        return sum(1 for _ in docs)
 

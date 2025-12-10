@@ -21,6 +21,14 @@ def generate_single_youtube_suggestion(topicId: str):
     if not topic:
         raise HTTPException(status_code=404, detail="Topic não encontrado.")
 
+    # Verifica se já existe o limite máximo de 5 sugestões
+    current_count = YouTubeSuggestionService.count_suggestions_by_topic(topicId)
+    if current_count >= 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Limite máximo de 5 sugestões atingido para este tópico. Delete uma sugestão existente antes de criar uma nova."
+        )
+
     #Pesquisa no Youtube
     search_text = topic.title
     yt_results = youtube_search(search_text, max_results=1)["results"]
