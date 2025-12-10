@@ -44,6 +44,7 @@ function NewTopicContent() {
               historyItems.push({
                 id: topic.topicId || topic.id,
                 subjectAbbr: subject.name.substring(0, 3).toUpperCase(),
+                subjectName: subject.name,
                 topicName: topic.title,
                 subjectId: subjectId,
               });

@@ -40,6 +40,7 @@ export interface StudySession {
 export interface HistoryItem {
   id: string;
   subjectAbbr: string;
+  subjectName?: string;
   topicName: string;
   subjectId?: string;
 }

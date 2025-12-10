@@ -8,11 +8,13 @@ import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { HistoryItem } from "@/app/types";
 import { useRouter } from "next/navigation";
+import { useSidebarPadding } from "@/app/components/SidebarContext";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function NewSubject() {
   const router = useRouter();
+  const sidebarPadding = useSidebarPadding();
 
   const [subjectName, setSubjectName] = useState("");
   const [description, setDescription] = useState("");
@@ -71,6 +73,7 @@ export default function NewSubject() {
               historyItems.push({
                 id: topic.topicId || topic.id,
                 subjectAbbr: subject.name.substring(0, 3).toUpperCase(),
+                subjectName: subject.name,
                 topicName: topic.title,
                 subjectId: subjectId,
               });
@@ -151,7 +154,7 @@ export default function NewSubject() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex pl-72">
+    <div className={`min-h-screen bg-background flex transition-all duration-300 ${sidebarPadding}`}>
 
       <Sidebar history={history} />
 
