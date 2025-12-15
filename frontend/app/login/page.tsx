@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
@@ -15,10 +15,25 @@ const LoginPage = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Se já existe sessão no client, enviar direto para homepage
+  useEffect(() => {
+    const storedUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+    if (storedUserId) {
+      window.location.href = "/homepage";
+      return;
+    }
+    // Recupera mensagem de erro prévia do callback (se houver)
+    const callbackError = sessionStorage.getItem("loginError");
+    if (callbackError) {
+      setError(callbackError);
+      sessionStorage.removeItem("loginError");
+    }
+  }, []);
+
+  // Login com email/senha ainda não implementado (para evitar falso-positivo)
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login with:", email, password);
-    window.location.href = "/homepage";
+    setError("Login com e-mail/senha não disponível. Use Google.");
   };
 
   const handleGoogleLogin = async () => {
@@ -84,6 +99,7 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled
             />
 
             <Input
@@ -92,7 +108,14 @@ const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled
             />
+
+            {error && (
+              <p className="text-sm text-red-500">
+                {error}
+              </p>
+            )}
 
             {/* Divider */}
             <div className="relative my-6">
@@ -101,7 +124,7 @@ const LoginPage = () => {
               </div>
               <div className="relative flex justify-start">
                 <span className="bg-card pr-4 text-sm text-muted-foreground">
-                  Or continue with
+                  Continue with
                 </span>
               </div>
             </div>
@@ -117,9 +140,9 @@ const LoginPage = () => {
               <GoogleIcon />
             </Button>
 
-            {/* Login Button */}
-            <Button type="submit" size="lg" className="w-full">
-              Log in
+            {/* Login Button (disabled) */}
+            <Button type="submit" size="lg" className="w-full" disabled>
+              Log in (disabled)
             </Button>
           </form>
 

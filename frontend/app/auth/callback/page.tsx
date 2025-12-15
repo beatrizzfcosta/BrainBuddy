@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense, useRef } from "react";
+import { useEffect, Suspense, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import brainbuddyLogo from "@/public/BrainBuddy.png";
@@ -11,6 +11,7 @@ const CallbackContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const hasProcessed = useRef(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     // Garantir que o callback execute apenas uma vez
@@ -44,9 +45,10 @@ const CallbackContent = () => {
         
         if (!response.ok) {
           const errorText = await response.text();
-          sessionStorage.setItem("loginError", "Erro ao processar autenticação. Tente novamente.");
-          router.push("/login?error=callback_failed");
-          return;
+          const message = errorText || "Erro ao processar autenticação. Tente novamente.";
+          sessionStorage.setItem("loginError", message);
+          setErrorMsg(message);
+          return; // não redireciona imediatamente para permitir exibir erro
         }
 
         const data = await response.json();
@@ -60,9 +62,13 @@ const CallbackContent = () => {
         // Redirecionar imediatamente para a homepage
         router.push("/homepage");
       } catch (error) {
+        const message =
+          error instanceof Error
+            ? `Erro ao processar autenticação: ${error.message}`
+            : "Erro ao processar autenticação. Tente novamente.";
         console.error("Erro ao processar callback:", error);
-        sessionStorage.setItem("loginError", "Erro ao processar autenticação. Tente novamente.");
-        router.push("/login?error=callback_failed");
+        sessionStorage.setItem("loginError", message);
+        setErrorMsg(message);
       }
     };
 
@@ -72,10 +78,10 @@ const CallbackContent = () => {
     // e os valores da URL não mudam após o primeiro render
   }, [router]);
 
-  // Mostrar apenas logo e loading enquanto processa
+  // Mostrar estado de erro (sem redirecionar) ou loading
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="flex flex-col items-center space-y-8">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="flex flex-col items-center space-y-6 text-center">
         <Image
           src={brainbuddyLogo}
           alt="BrainBuddy Logo"
@@ -83,7 +89,19 @@ const CallbackContent = () => {
           width={128}
           height={128}
         />
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        {errorMsg ? (
+          <>
+            <p className="text-red-500 text-sm max-w-md">{errorMsg}</p>
+            <button
+              className="rounded-md bg-primary px-4 py-2 text-white text-sm"
+              onClick={() => router.push("/login")}
+            >
+              Voltar para login
+            </button>
+          </>
+        ) : (
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        )}
       </div>
     </div>
   );
