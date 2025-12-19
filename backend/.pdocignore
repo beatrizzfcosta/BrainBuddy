@@ -1,0 +1,20 @@
+# Arquivos e pastas a ignorar na documentação
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+test_*.py
+*_test.py
+

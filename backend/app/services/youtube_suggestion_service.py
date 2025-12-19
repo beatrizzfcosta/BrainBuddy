@@ -8,11 +8,28 @@ from google.cloud.firestore_v1 import FieldFilter
 
 
 class YouTubeSuggestionService:
+    """
+    Serviço para operações CRUD de YouTube suggestions no Firestore
+    
+    Gerencia todas as operações relacionadas a sugestões de vídeos do YouTube
+    para topics, incluindo criação, busca, atualização e listagem.
+    
+    Attributes:
+        COLLECTION: Nome da coleção no Firestore ("youtube_suggestions")
+    """
     COLLECTION = "youtube_suggestions"
 
     @staticmethod
     def create_youtube_suggestion(suggestion_data: YouTubeSuggestionCreate) -> YouTubeSuggestion:
-        """Cria uma nova YouTube suggestion"""
+        """
+        Cria uma nova sugestão do YouTube no Firestore
+        
+        Args:
+            suggestion_data: Dados da sugestão a ser criada (YouTubeSuggestionCreate)
+        
+        Returns:
+            YouTubeSuggestion: Sugestão criada (com suggestionId atribuído)
+        """
         suggestion_dict = suggestion_data.model_dump()
         
         doc_ref = db.collection(YouTubeSuggestionService.COLLECTION).add(suggestion_dict)
@@ -21,7 +38,15 @@ class YouTubeSuggestionService:
 
     @staticmethod
     def get_youtube_suggestion(suggestion_id: str) -> Optional[YouTubeSuggestion]:
-        """Busca uma YouTube suggestion por ID"""
+        """
+        Busca uma sugestão do YouTube por ID no Firestore
+        
+        Args:
+            suggestion_id: ID único da sugestão no Firestore
+        
+        Returns:
+            Optional[YouTubeSuggestion]: Dados da sugestão se encontrada, None caso contrário
+        """
         doc = db.collection(YouTubeSuggestionService.COLLECTION).document(suggestion_id).get()
         if doc.exists:
             data = doc.to_dict()
@@ -30,7 +55,16 @@ class YouTubeSuggestionService:
 
     @staticmethod
     def update_youtube_suggestion(suggestion_id: str, suggestion_data: YouTubeSuggestionUpdate) -> Optional[YouTubeSuggestion]:
-        """Atualiza uma YouTube suggestion"""
+        """
+        Atualiza uma sugestão do YouTube existente no Firestore
+        
+        Args:
+            suggestion_id: ID único da sugestão a ser atualizada
+            suggestion_data: Dados atualizados (YouTubeSuggestionUpdate)
+        
+        Returns:
+            Optional[YouTubeSuggestion]: Sugestão atualizada se encontrada, None caso contrário
+        """
         update_data = suggestion_data.model_dump(exclude_unset=True)
         if not update_data:
             return YouTubeSuggestionService.get_youtube_suggestion(suggestion_id)
@@ -41,13 +75,32 @@ class YouTubeSuggestionService:
 
     @staticmethod
     def delete_youtube_suggestion(suggestion_id: str) -> bool:
-        """Deleta uma YouTube suggestion"""
+        """
+        Deleta uma sugestão do YouTube do Firestore
+        
+        Args:
+            suggestion_id: ID único da sugestão a ser deletada
+        
+        Returns:
+            bool: True se a operação foi bem-sucedida
+        """
         db.collection(YouTubeSuggestionService.COLLECTION).document(suggestion_id).delete()
         return True
 
     @staticmethod
     def list_youtube_suggestions_by_topic(topic_id: str) -> List[YouTubeSuggestion]:
-        """Lista todas as YouTube suggestions de um topic (máximo de 5)"""
+        """
+        Lista todas as sugestões do YouTube relacionadas a um topic (máximo de 5)
+        
+        Args:
+            topic_id: ID único do topic
+        
+        Returns:
+            List[YouTubeSuggestion]: Lista de até 5 sugestões do topic especificado
+        
+        Note:
+            O limite de 5 sugestões é aplicado para manter a interface limpa
+        """
         docs = db.collection(YouTubeSuggestionService.COLLECTION).where(
             filter=FieldFilter("topicId", "==", topic_id)
         ).limit(5).stream()
@@ -55,7 +108,18 @@ class YouTubeSuggestionService:
 
     @staticmethod
     def count_suggestions_by_topic(topic_id: str) -> int:
-        """Conta quantas sugestões existem para um topic"""
+        """
+        Conta quantas sugestões existem para um topic
+        
+        Útil para verificar se já foram geradas 5 sugestões (limite máximo)
+        antes de criar novas.
+        
+        Args:
+            topic_id: ID único do topic
+        
+        Returns:
+            int: Número total de sugestões para o topic
+        """
         docs = db.collection(YouTubeSuggestionService.COLLECTION).where(
             filter=FieldFilter("topicId", "==", topic_id)
         ).stream()

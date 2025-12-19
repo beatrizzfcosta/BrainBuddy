@@ -33,6 +33,25 @@ from app.api import (
 
 @app.get("/")
 async def root():
+    """
+    Endpoint raiz da API
+    
+    Retorna uma mensagem de status indicando que a API está funcionando.
+    Útil para verificar se o servidor está online.
+    
+    Returns:
+        dict: Objeto com mensagem e status:
+            {
+                "message": "BrainBudy API está funcionando!",
+                "status": "ok"
+            }
+    
+    Example:
+        >>> import requests
+        >>> response = requests.get("http://localhost:8000/")
+        >>> response.json()
+        {"message": "BrainBudy API está funcionando!", "status": "ok"}
+    """
     return {"message": "BrainBudy API está funcionando!", "status": "ok"}
 
 #Registar rotas principais
