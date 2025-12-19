@@ -12,6 +12,15 @@ import { useSidebarPadding } from "@/app/components/SidebarContext";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/**
+ * Página de criação de novo subject
+ * 
+ * Permite ao usuário criar uma nova disciplina/matéria com nome e descrição.
+ * Verifica autenticação e redireciona para login se necessário.
+ * Após criar, redireciona para a homepage.
+ * 
+ * @returns Componente React da página de criação de subject
+ */
 export default function NewSubject() {
   const router = useRouter();
   const sidebarPadding = useSidebarPadding();
@@ -24,7 +33,11 @@ export default function NewSubject() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Verificar autenticação e buscar histórico
+  /**
+   * Verifica autenticação e carrega histórico para a sidebar
+   * 
+   * Redireciona para login se o usuário não estiver autenticado.
+   */
   useEffect(() => {
     const checkAuthAndLoadHistory = async () => {
       const storedUserId = localStorage.getItem("userId");
@@ -52,6 +65,14 @@ export default function NewSubject() {
     checkAuthAndLoadHistory();
   }, [router]);
 
+  /**
+   * Carrega o histórico de navegação para exibir na sidebar
+   * 
+   * Busca até 10 subjects mais recentes e, para cada um, até 3 topics mais recentes.
+   * 
+   * @param userId - ID do usuário autenticado
+   * @throws {Error} Se falhar ao buscar subjects ou topics
+   */
   const loadHistory = async (userId: string) => {
     try {
       // Buscar todos os subjects do usuário
@@ -92,6 +113,14 @@ export default function NewSubject() {
     }
   };
 
+  /**
+   * Cria um novo subject no backend
+   * 
+   * Valida os dados (nome obrigatório), envia para o backend e redireciona
+   * para a homepage após sucesso. Exibe erros se a validação ou criação falhar.
+   * 
+   * @throws {Error} Se o nome estiver vazio, usuário não autenticado ou falha na API
+   */
   const handleCreateSubject = async () => {
     if (!subjectName.trim()) {
       setError("O nome do subject é obrigatório");

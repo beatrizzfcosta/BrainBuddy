@@ -10,6 +10,14 @@ import { HistoryItem, Subject } from "@/app/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/**
+ * Componente de conteúdo da página de criação de topic
+ * 
+ * Permite criar um novo topic com nome e opcionalmente fazer upload de arquivo .txt.
+ * O arquivo .txt é usado como contexto para gerar conteúdo com IA automaticamente.
+ * 
+ * @returns Componente React da página de criação de topic
+ */
 function NewTopicContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,6 +34,11 @@ function NewTopicContent() {
   const [userId, setUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /**
+   * Carrega o histórico de navegação para exibir na sidebar
+   * 
+   * @param userId - ID do usuário autenticado
+   */
   const loadHistory = useCallback(async (userId: string) => {
     try {
       const subjectsResponse = await fetch(`${API_BASE_URL}/api/subjects/user/${userId}`);
@@ -63,6 +76,12 @@ function NewTopicContent() {
     }
   }, []);
 
+  /**
+   * Carrega os dados do subject relacionado
+   * 
+   * @param subjectId - ID do subject a ser carregado
+   * @throws {Error} Se o subject não for encontrado ou falhar ao buscar
+   */
   const loadSubject = useCallback(async (subjectId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/subjects/${subjectId}`);
@@ -114,15 +133,32 @@ function NewTopicContent() {
     checkAuthAndLoadData();
   }, [subjectId, router, loadSubject, loadHistory]);
 
+  /**
+   * Manipula o clique no botão de voltar
+   * 
+   * Redireciona para a página do subject se disponível, senão para homepage
+   */
   const handleBack = () => {
     if (subjectId) router.push(`/subject/${subjectId}`);
     else router.push("/homepage");
   };
 
+  /**
+   * Abre o seletor de arquivo
+   * 
+   * Simula o clique no input de arquivo oculto
+   */
   const handleFileUpload = () => {
     fileInputRef.current?.click();
   };
 
+  /**
+   * Manipula a seleção de arquivo
+   * 
+   * Valida se o arquivo é .txt e armazena para envio posterior
+   * 
+   * @param e - Evento de mudança do input de arquivo
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -137,6 +173,15 @@ function NewTopicContent() {
     }
   };
 
+  /**
+   * Cria um novo topic com opcional upload de arquivo .txt
+   * 
+   * Valida os dados, envia para o backend (com arquivo se fornecido) e redireciona
+   * para a página do topic criado. Se houver arquivo .txt, o backend gera conteúdo
+   * com IA automaticamente baseado nas notas do arquivo.
+   * 
+   * @throws {Error} Se o nome estiver vazio, subjectId não fornecido ou falha na API
+   */
   const handleGeneratePlan = async () => {
     if (!topicName.trim()) {
       setError("O nome do topic é obrigatório");
@@ -297,6 +342,22 @@ function NewTopicContent() {
   );
 }
 
+/**
+ * Página wrapper de criação de topic
+ * 
+ * Envolve o NewTopicContent em Suspense para lidar com o carregamento
+ * assíncrono dos searchParams do Next.js.
+ * 
+ * Esta é a página principal exportada para a rota `/newtopic`.
+ * 
+ * @returns Componente React da página de criação de topic
+ * 
+ * @example
+ * ```tsx
+ * // Acessível em: /newtopic?subjectId=xyz789
+ * <NewTopicPage />
+ * ```
+ */
 export default function NewTopicPage() {
   return (
     <Suspense fallback={

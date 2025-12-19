@@ -18,6 +18,14 @@ import { HistoryItem, Subject, Topic } from "@/app/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/**
+ * Página de detalhes do subject
+ * 
+ * Exibe informações do subject, lista de topics relacionados, permite editar
+ * nome/descrição, criar novos topics, navegar para topics e deletar o subject.
+ * 
+ * @returns Componente React da página de detalhes do subject
+ */
 export default function SubjectDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -36,6 +44,11 @@ export default function SubjectDetailPage() {
   const [editedDescription, setEditedDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  /**
+   * Carrega o histórico de navegação para exibir na sidebar
+   * 
+   * @param userId - ID do usuário autenticado
+   */
   const loadHistory = useCallback(async (userId: string) => {
     try {
       const subjectsResponse = await fetch(`${API_BASE_URL}/api/subjects/user/${userId}`);
@@ -73,6 +86,12 @@ export default function SubjectDetailPage() {
     }
   }, []);
 
+  /**
+   * Carrega os dados do subject
+   * 
+   * @param subjectId - ID do subject a ser carregado
+   * @throws {Error} Se o subject não for encontrado ou falhar ao buscar
+   */
   const loadSubject = useCallback(async (subjectId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/subjects/${subjectId}`);
@@ -93,6 +112,11 @@ export default function SubjectDetailPage() {
     }
   }, []);
 
+  /**
+   * Carrega todos os topics relacionados ao subject
+   * 
+   * @param subjectId - ID do subject
+   */
   const loadTopics = useCallback(async (subjectId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/topics/subject/${subjectId}`);
@@ -135,8 +159,18 @@ export default function SubjectDetailPage() {
     checkAuthAndLoadData();
   }, [id, router, loadSubject, loadTopics, loadHistory]);
 
+  /**
+   * Manipula o clique no botão de voltar
+   * 
+   * Redireciona para a homepage
+   */
   const handleBack = () => router.push("/homepage");
 
+  /**
+   * Navega para a página do topic selecionado
+   * 
+   * Busca o topic selecionado no dropdown e navega para sua página de detalhes
+   */
   const handleSearch = () => {
     if (!selectedTopic) return;
     const topic = topics.find((t) => (t.topicId || t.id) === selectedTopic);
@@ -145,8 +179,21 @@ export default function SubjectDetailPage() {
     }
   };
 
+  /**
+   * Redireciona para a página de criação de novo topic
+   * 
+   * Navega para a página de criação passando o subjectId como parâmetro
+   */
   const handleCreateTopic = () => router.push(`/newtopic?subjectId=${id}`);
 
+  /**
+   * Deleta o subject atual
+   * 
+   * Solicita confirmação do usuário antes de deletar. Após deletar,
+   * redireciona para a homepage.
+   * 
+   * @throws {Error} Se falhar ao deletar o subject no backend
+   */
   const handleDeleteSubject = async () => {
     if (!confirm("Tem certeza que deseja deletar este subject? Esta ação não pode ser desfeita.")) {
       return;
@@ -170,6 +217,11 @@ export default function SubjectDetailPage() {
     }
   };
 
+  /**
+   * Ativa o modo de edição do subject
+   * 
+   * Carrega os valores atuais do subject nos campos de edição
+   */
   const handleEditClick = () => {
     if (subject) {
       setEditedName(subject.name || "");
@@ -178,6 +230,11 @@ export default function SubjectDetailPage() {
     }
   };
 
+  /**
+   * Cancela a edição do subject
+   * 
+   * Restaura os valores originais e desativa o modo de edição
+   */
   const handleCancelEdit = () => {
     if (subject) {
       setEditedName(subject.name || "");
@@ -187,6 +244,13 @@ export default function SubjectDetailPage() {
     }
   };
 
+  /**
+   * Salva as alterações do subject editado
+   * 
+   * Valida os dados (nome obrigatório) e atualiza o subject no backend.
+   * 
+   * @throws {Error} Se o nome estiver vazio ou falhar ao atualizar no backend
+   */
   const handleSaveEdit = async () => {
     if (!editedName.trim()) {
       setError("O nome do subject é obrigatório");

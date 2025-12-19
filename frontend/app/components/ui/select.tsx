@@ -5,12 +5,41 @@ import * as SelectPrimitive from "@radix-ui/react-select"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+/**
+ * Componente Select base (Root) do Radix UI
+ * 
+ * Componente raiz que gerencia o estado do select
+ */
 const Select = SelectPrimitive.Root
 
+/**
+ * Componente SelectGroup do Radix UI
+ * 
+ * Agrupa itens relacionados no select
+ */
 const SelectGroup = SelectPrimitive.Group
 
+/**
+ * Componente SelectValue do Radix UI
+ * 
+ * Exibe o valor selecionado no trigger do select
+ */
 const SelectValue = SelectPrimitive.Value
 
+/**
+ * Componente SelectTrigger
+ * 
+ * Botão que abre/fecha o dropdown do select. Estilizado com classes Tailwind.
+ * 
+ * @param props - Propriedades do trigger (className, children, etc.)
+ * 
+ * @example
+ * ```tsx
+ * <SelectTrigger>
+ *   <SelectValue placeholder="Selecione uma opção" />
+ * </SelectTrigger>
+ * ```
+ */
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
@@ -31,6 +60,14 @@ const SelectTrigger = React.forwardRef<
 ))
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
 
+/**
+ * Componente SelectContent
+ * 
+ * Container do dropdown com os itens do select. Renderizado em um Portal.
+ * 
+ * @param props - Propriedades do content (className, children, position, etc.)
+ * @param props.position - Posição do dropdown ("popper" ou "item-aligned")
+ */
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
@@ -55,6 +92,13 @@ const SelectContent = React.forwardRef<
 ))
 SelectContent.displayName = SelectPrimitive.Content.displayName
 
+/**
+ * Componente SelectLabel
+ * 
+ * Label para agrupar itens no select (opcional)
+ * 
+ * @param props - Propriedades do label (className, children, etc.)
+ */
 const SelectLabel = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Label>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
@@ -67,6 +111,19 @@ const SelectLabel = React.forwardRef<
 ))
 SelectLabel.displayName = SelectPrimitive.Label.displayName
 
+/**
+ * Componente SelectItem
+ * 
+ * Item individual do select. Exibe um check quando selecionado.
+ * 
+ * @param props - Propriedades do item (className, children, value, etc.)
+ * 
+ * @example
+ * ```tsx
+ * <SelectItem value="option1">Opção 1</SelectItem>
+ * <SelectItem value="option2">Opção 2</SelectItem>
+ * ```
+ */
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>

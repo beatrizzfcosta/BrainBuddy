@@ -9,6 +9,14 @@ import { useRouter, usePathname } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/**
+ * Página principal (Dashboard/Homepage) do BrainBuddy
+ * 
+ * Exibe a lista de subjects do usuário, sessões de estudo agendadas e histórico de navegação.
+ * Permite criar novos subjects, visualizar subjects existentes e gerenciar sessões de estudo.
+ * 
+ * @returns Componente React da homepage
+ */
 export default function Dashboard() {
   const router = useRouter();
   const pathname = usePathname();
@@ -19,6 +27,14 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
+  /**
+   * Carrega todos os subjects do usuário
+   * 
+   * Busca os subjects do backend e converte para o formato esperado pelo frontend.
+   * 
+   * @param userId - ID do usuário autenticado
+   * @throws {Error} Se falhar ao buscar subjects do backend
+   */
   const loadSubjects = useCallback(async (userId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/subjects/user/${userId}`);
@@ -43,6 +59,15 @@ export default function Dashboard() {
     }
   }, []);
 
+  /**
+   * Carrega o histórico de navegação do usuário
+   * 
+   * Busca até 10 subjects mais recentes e, para cada um, até 3 topics mais recentes
+   * para montar o histórico exibido na sidebar.
+   * 
+   * @param userId - ID do usuário autenticado
+   * @throws {Error} Se falhar ao buscar subjects ou topics
+   */
   const loadHistory = useCallback(async (userId: string) => {
     try {
       // Buscar todos os subjects do usuário
@@ -82,6 +107,16 @@ export default function Dashboard() {
     }
   }, []);
 
+  /**
+   * Cria um evento no Google Calendar para uma sessão de estudo
+   * 
+   * Cria o evento no calendário e vincula o ID do evento à study session no backend.
+   * 
+   * @param session - Dados da sessão de estudo
+   * @param topic - Dados do topic relacionado
+   * @param accessToken - Token de acesso do Google Calendar
+   * @returns true se o evento foi criado com sucesso, false caso contrário
+   */
   const createCalendarEventForSession = useCallback(async (session: any, topic: any, accessToken: string) => {
     try {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -124,6 +159,15 @@ export default function Dashboard() {
     return false;
   }, []);
 
+  /**
+   * Carrega as sessões de estudo agendadas do usuário
+   * 
+   * Busca todas as sessões do usuário, filtra apenas as agendadas e futuras,
+   * e cria eventos no Google Calendar se necessário (quando access token disponível).
+   * 
+   * @param userId - ID do usuário autenticado
+   * @throws {Error} Se falhar ao buscar study sessions do backend
+   */
   const loadStudySessions = useCallback(async (userId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/study-sessions/user/${userId}`);
@@ -270,14 +314,33 @@ export default function Dashboard() {
     };
   }, [userId, pathname, loadSubjects, loadHistory, loadStudySessions]);
 
+  /**
+   * Manipula o clique no botão de adicionar novo subject
+   * 
+   * Redireciona para a página de criação de subject
+   */
   const handleAddSubject = () => {
     router.push("/newsubject");
   };
 
+  /**
+   * Manipula o clique em um card de subject
+   * 
+   * Redireciona para a página de detalhes do subject selecionado
+   * 
+   * @param subject - Subject que foi clicado
+   */
   const handleSubjectClick = (subject: Subject) => {
     router.push(`/subject/${subject.id}`);
   };
 
+  /**
+   * Confirma uma sessão de estudo (marca como completa)
+   * 
+   * Atualiza o estado da sessão para "completed" no backend
+   * 
+   * @param sessionId - ID da sessão a ser confirmada
+   */
   const handleConfirmSession = async (sessionId: string) => {
     if (!userId) return;
     
@@ -303,6 +366,14 @@ export default function Dashboard() {
     }
   };
 
+  /**
+   * Cancela uma sessão de estudo (marca como perdida)
+   * 
+   * Remove o evento do Google Calendar (se existir) e atualiza
+   * o estado da sessão para "missed" no backend.
+   * 
+   * @param sessionId - ID da sessão a ser cancelada
+   */
   const handleCancelSession = async (sessionId: string) => {
     if (!userId) return;
     

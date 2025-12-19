@@ -1,0 +1,18 @@
+{
+  "entryPoints": ["app/**/*.ts", "app/**/*.tsx"],
+  "out": "docs",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/node_modules/**",
+    ".next/**"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "readme": "none",
+  "name": "BrainBuddy Frontend Documentation",
+  "includeVersion": true,
+  "theme": "default"
+}
+

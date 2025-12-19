@@ -9,13 +9,24 @@ import brainbuddyLogo from "@/public/BrainBuddy.png";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/**
+ * Página de login do BrainBuddy
+ * 
+ * Permite autenticação via Google OAuth. O login com email/senha está desabilitado.
+ * Verifica se o usuário já está autenticado e redireciona para a homepage se necessário.
+ * 
+ * @returns Componente React da página de login
+ */
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Se já existe sessão no client, enviar direto para homepage
+  /**
+   * Verifica se o usuário já está autenticado e redireciona para homepage
+   * Também recupera mensagens de erro do callback OAuth (se houver)
+   */
   useEffect(() => {
     const storedUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
     if (storedUserId) {
@@ -30,12 +41,26 @@ const LoginPage = () => {
     }
   }, []);
 
-  // Login com email/senha ainda não implementado (para evitar falso-positivo)
+  /**
+   * Manipula o submit do formulário de login
+   * 
+   * Atualmente desabilitado - apenas exibe mensagem pedindo uso do Google OAuth
+   * 
+   * @param e - Evento de submit do formulário
+   */
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError("Login com e-mail/senha não disponível. Use Google.");
   };
 
+  /**
+   * Inicia o processo de autenticação com Google OAuth
+   * 
+   * Busca a URL de autorização do backend e redireciona o usuário para o Google.
+   * Trata erros de conexão e exibe mensagens apropriadas.
+   * 
+   * @throws {Error} Se falhar ao obter URL de autorização do backend
+   */
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     setError(null);

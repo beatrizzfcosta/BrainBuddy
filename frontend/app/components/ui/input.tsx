@@ -1,9 +1,29 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Propriedades do componente Input
+ * 
+ * Estende todas as propriedades padrão de um input HTML
+ */
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {}
 
+/**
+ * Componente Input reutilizável
+ * 
+ * Input estilizado com suporte a todas as propriedades padrão de input HTML.
+ * Inclui estilos de foco, placeholder e estados desabilitados.
+ * 
+ * @param props - Propriedades do input (type, placeholder, value, onChange, etc.)
+ * @param props.className - Classes CSS adicionais
+ * 
+ * @example
+ * ```tsx
+ * <Input type="email" placeholder="seu@email.com" />
+ * <Input type="password" value={password} onChange={handleChange} />
+ * ```
+ */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, ...props }, ref) => {
     return (

@@ -10,6 +10,15 @@ import { HistoryItem, Topic } from "@/app/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/**
+ * Componente de conteúdo da página de agendamento de sessões de estudo
+ * 
+ * Permite criar múltiplas sessões de estudo recorrentes para um topic,
+ * com opção de integrar com Google Calendar. Valida horários, duração mínima
+ * e cria eventos no calendário se o access token estiver disponível.
+ * 
+ * @returns Componente React da página de agendamento
+ */
 function ScheduleContent() {
   const router = useRouter();
   const search = useSearchParams();
@@ -29,6 +38,9 @@ function ScheduleContent() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
+  /**
+   * Mapeamento dos dias da semana para exibição
+   */
   const weekDays = [
     { label: "Mon", value: 1 },
     { label: "Tue", value: 2 },
@@ -39,6 +51,11 @@ function ScheduleContent() {
     { label: "Sun", value: 0 },
   ];
 
+  /**
+   * Alterna a seleção de um dia da semana
+   * 
+   * @param dayValue - Valor do dia (0-6, onde 0 = domingo)
+   */
   const toggleDay = (dayValue: number) => {
     const newSelectedDays = new Set(selectedDays);
     if (newSelectedDays.has(dayValue)) {
@@ -49,6 +66,11 @@ function ScheduleContent() {
     setSelectedDays(newSelectedDays);
   };
 
+  /**
+   * Carrega o histórico de navegação para exibir na sidebar
+   * 
+   * @param userId - ID do usuário autenticado
+   */
   const loadHistory = useCallback(async (userId: string) => {
     try {
       const subjectsResponse = await fetch(`${API_BASE_URL}/api/subjects/user/${userId}`);
@@ -86,6 +108,12 @@ function ScheduleContent() {
     }
   }, []);
 
+  /**
+   * Carrega os dados do topic relacionado
+   * 
+   * @param topicId - ID do topic a ser carregado
+   * @throws {Error} Se o topic não for encontrado ou falhar ao buscar
+   */
   const loadTopic = useCallback(async (topicId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/topics/${topicId}`);
@@ -131,9 +159,24 @@ function ScheduleContent() {
     checkAuthAndLoadData();
   }, [topicId, router, loadTopic, loadHistory]);
 
+  /**
+   * Manipula o clique no botão de voltar
+   * 
+   * Redireciona para a página do topic relacionado
+   */
   const handleBack = () =>
     router.push(`/topic/${topicId}?subjectId=${subjectId}`);
 
+  /**
+   * Cria múltiplas sessões de estudo recorrentes
+   * 
+   * Valida os dados (dias selecionados, horários, duração mínima de 30min),
+   * calcula todas as datas das sessões para o número de semanas especificado,
+   * cria as study sessions no backend e, se access token disponível, cria
+   * eventos no Google Calendar e vincula aos sessions.
+   * 
+   * @throws {Error} Se validação falhar, dados insuficientes ou falha na API
+   */
   const handleAdd = async () => {
     if (selectedDays.size === 0) {
       setError("Por favor, selecione pelo menos um dia da semana");
@@ -183,7 +226,13 @@ function ScheduleContent() {
       const now = new Date();
       const selectedDaysArray = Array.from(selectedDays);
       
-      // Encontrar o próximo dia da semana selecionado a partir de hoje
+      /**
+       * Encontra a próxima ocorrência de um dia da semana a partir de uma data
+       * 
+       * @param dayOfWeek - Dia da semana (0 = domingo, 1 = segunda, etc.)
+       * @param fromDate - Data de referência
+       * @returns Data da próxima ocorrência do dia da semana
+       */
       const getNextDateForDay = (dayOfWeek: number, fromDate: Date): Date => {
         const currentDay = fromDate.getDay();
         let daysUntil = dayOfWeek - currentDay;
@@ -530,6 +579,22 @@ function ScheduleContent() {
   );
 }
 
+/**
+ * Página wrapper de agendamento de sessões de estudo
+ * 
+ * Envolve o ScheduleContent em Suspense para lidar com o carregamento
+ * assíncrono dos searchParams do Next.js.
+ * 
+ * Esta é a página principal exportada para a rota `/schedule`.
+ * 
+ * @returns Componente React da página de agendamento
+ * 
+ * @example
+ * ```tsx
+ * // Acessível em: /schedule?subjectId=xyz789&topicId=abc123
+ * <SchedulePage />
+ * ```
+ */
 export default function SchedulePage() {
   return (
     <Suspense fallback={

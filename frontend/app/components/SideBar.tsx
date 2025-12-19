@@ -7,16 +7,42 @@ import { useState, useMemo } from "react";
 import { HistoryItem } from "@/app/types";
 import { useSidebar } from "./SidebarContext";
 
+/**
+ * Propriedades do componente Sidebar
+ * 
+ * @property history - Lista de itens do histórico para exibir na sidebar
+ */
 interface SidebarProps {
   history: HistoryItem[];
 }
 
+/**
+ * Representa um grupo de histórico agrupado por subject
+ * 
+ * @property subjectId - ID do subject
+ * @property subjectName - Nome do subject
+ * @property topics - Lista de topics pertencentes a este subject
+ */
 interface GroupedHistory {
   subjectId: string;
   subjectName: string;
   topics: HistoryItem[];
 }
 
+/**
+ * Componente Sidebar - Barra lateral com histórico de navegação
+ * 
+ * Exibe um histórico organizado de subjects e topics, permitindo navegação rápida.
+ * Pode ser expandida ou colapsada, e agrupa topics por subject.
+ * 
+ * @param props - Propriedades do componente
+ * @param props.history - Lista de itens do histórico para exibir
+ * 
+ * @example
+ * ```tsx
+ * <Sidebar history={historyItems} />
+ * ```
+ */
 const Sidebar = ({ history }: SidebarProps) => {
   const router = useRouter();
   const { isOpen, setIsOpen } = useSidebar();
@@ -57,6 +83,11 @@ const Sidebar = ({ history }: SidebarProps) => {
     return Array.from(grouped.values());
   }, [history]);
 
+  /**
+   * Alterna o estado de expansão/colapso de um subject na sidebar
+   * 
+   * @param subjectId - ID do subject a ser expandido/colapsado
+   */
   const toggleSubject = (subjectId: string) => {
     const newExpanded = new Set(expandedSubjects);
     if (newExpanded.has(subjectId)) {
@@ -67,6 +98,13 @@ const Sidebar = ({ history }: SidebarProps) => {
     setExpandedSubjects(newExpanded);
   };
 
+  /**
+   * Manipula o clique em um item do histórico (topic)
+   * 
+   * Navega para a página do topic selecionado, incluindo o subjectId como query param
+   * 
+   * @param item - Item do histórico que foi clicado
+   */
   const handleHistoryItemClick = (item: HistoryItem) => {
     const topicId = item.id;
     if (topicId) {
@@ -75,6 +113,13 @@ const Sidebar = ({ history }: SidebarProps) => {
     }
   };
 
+  /**
+   * Manipula o clique em um subject na sidebar
+   * 
+   * Navega para a página do subject selecionado
+   * 
+   * @param subjectId - ID do subject que foi clicado
+   */
   const handleSubjectClick = (subjectId: string) => {
     router.push(`/subject/${subjectId}`);
   };

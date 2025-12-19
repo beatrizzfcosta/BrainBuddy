@@ -1,3 +1,19 @@
+/**
+ * Componente de ícone do Google
+ * 
+ * Renderiza o logo oficial do Google em formato SVG.
+ * Usado principalmente no botão de login com Google OAuth.
+ * 
+ * @param props - Propriedades do componente
+ * @param props.className - Classes CSS opcionais para estilização
+ * 
+ * @returns Componente SVG do logo do Google
+ * 
+ * @example
+ * ```tsx
+ * <GoogleIcon className="w-6 h-6" />
+ * ```
+ */
 const GoogleIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" width="24" height="24">
     <path

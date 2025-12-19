@@ -2,8 +2,28 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Propriedades do componente Textarea
+ * 
+ * Estende todas as propriedades padrão de um textarea HTML
+ */
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
 
+/**
+ * Componente Textarea reutilizável
+ * 
+ * Textarea estilizado com suporte a todas as propriedades padrão de textarea HTML.
+ * Inclui estilos de foco, placeholder e estados desabilitados.
+ * 
+ * @param props - Propriedades do textarea (rows, placeholder, value, onChange, etc.)
+ * @param props.className - Classes CSS adicionais
+ * 
+ * @example
+ * ```tsx
+ * <Textarea placeholder="Digite sua descrição..." rows={5} />
+ * <Textarea value={content} onChange={handleChange} disabled />
+ * ```
+ */
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, ...props }, ref) => {
   return (
     <textarea

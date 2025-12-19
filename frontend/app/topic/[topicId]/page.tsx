@@ -10,6 +10,14 @@ import { HistoryItem, Topic, Note, YouTubeSuggestion } from "@/app/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/**
+ * Componente de conteúdo da página de detalhes do topic
+ * 
+ * Exibe informações do topic, conteúdo gerado por IA (ou permite gerar),
+ * sugestões do YouTube e permite agendar sessões de estudo ou deletar o topic.
+ * 
+ * @returns Componente React da página de detalhes do topic
+ */
 function TopicDetailContent() {
   const router = useRouter();
   const params = useParams();
@@ -29,6 +37,11 @@ function TopicDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
+  /**
+   * Carrega o histórico de navegação para exibir na sidebar
+   * 
+   * @param userId - ID do usuário autenticado
+   */
   const loadHistory = useCallback(async (userId: string) => {
     try {
       const subjectsResponse = await fetch(`${API_BASE_URL}/api/subjects/user/${userId}`);
@@ -66,6 +79,12 @@ function TopicDetailContent() {
     }
   }, []);
 
+  /**
+   * Carrega os dados do topic
+   * 
+   * @param topicId - ID do topic a ser carregado
+   * @throws {Error} Se o topic não for encontrado ou falhar ao buscar
+   */
   const loadTopic = useCallback(async (topicId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/topics/${topicId}`);
@@ -84,6 +103,15 @@ function TopicDetailContent() {
     }
   }, []);
 
+  /**
+   * Carrega as notes do topic e exibe o conteúdo
+   * 
+   * Busca notes do topic, prioriza note gerada por IA, e se não houver notes,
+   * gera conteúdo automaticamente usando a IA.
+   * 
+   * @param topicId - ID do topic
+   * @param currentTopic - Dados do topic atual (para usar como contexto na geração)
+   */
   const loadNotes = useCallback(async (topicId: string, currentTopic: Topic | null) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/notes/topic/${topicId}`);
@@ -109,6 +137,13 @@ function TopicDetailContent() {
     }
   }, []);
 
+  /**
+   * Gera sugestões do YouTube para o topic
+   * 
+   * Gera até 5 sugestões de vídeos do YouTube relacionadas ao topic.
+   * 
+   * @param topicId - ID do topic
+   */
   const generateYouTubeSuggestions = useCallback(async (topicId: string) => {
     try {
       const MAX_SUGGESTIONS = 5;
@@ -142,6 +177,13 @@ function TopicDetailContent() {
     }
   }, []);
 
+  /**
+   * Carrega sugestões do YouTube existentes ou gera novas se necessário
+   * 
+   * Busca sugestões já salvas no Firestore. Se não houver, gera automaticamente.
+   * 
+   * @param topicId - ID do topic
+   */
   const loadYouTubeSuggestions = useCallback(async (topicId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/youtube-suggestions/topic/${topicId}`);
@@ -166,6 +208,16 @@ function TopicDetailContent() {
     }
   }, [generateYouTubeSuggestions]);
 
+  /**
+   * Gera conteúdo com IA usando a API do Gemini
+   * 
+   * Cria uma note vazia, chama a API do Gemini para gerar conteúdo explicativo
+   * sobre o topic e atualiza a note com o conteúdo gerado.
+   * 
+   * @param topicId - ID do topic
+   * @param currentTopic - Dados do topic (usado como contexto no prompt)
+   * @throws {Error} Se falhar ao criar note, gerar conteúdo ou atualizar note
+   */
   const generateContent = useCallback(async (topicId: string, currentTopic: Topic) => {
     setIsGenerating(true);
     setError(null);
@@ -268,14 +320,32 @@ function TopicDetailContent() {
     }
   }, [topic, topicId, loadNotes, loadYouTubeSuggestions]);
 
+  /**
+   * Manipula o clique no botão de voltar
+   * 
+   * Redireciona para a página do subject se disponível, senão para homepage
+   */
   const handleBack = () => {
     if (subjectId) router.push(`/subject/${subjectId}`);
     else router.push("/homepage");
   };
 
+  /**
+   * Redireciona para a página de agendamento de sessões
+   * 
+   * Navega para a página de schedule com os parâmetros do subject e topic
+   */
   const handleScheduleSession = () =>
     router.push(`/schedule?subjectId=${subjectId}&topicId=${topicId}`);
 
+  /**
+   * Salva o conteúdo editado da note
+   * 
+   * Busca a note existente (priorizando AI-generated) e atualiza com o conteúdo editado.
+   * Se não houver note, cria uma nova.
+   * 
+   * @throws {Error} Se falhar ao buscar ou atualizar/criar note
+   */
   const handleSaveContent = async () => {
     if (!topic) return;
 
@@ -320,6 +390,14 @@ function TopicDetailContent() {
     }
   };
 
+  /**
+   * Deleta o topic atual
+   * 
+   * Solicita confirmação do usuário antes de deletar. Após deletar,
+   * redireciona para a página do subject ou homepage.
+   * 
+   * @throws {Error} Se falhar ao deletar o topic no backend
+   */
   const handleDeleteTopic = async () => {
     if (!confirm("Tem certeza que deseja deletar este topic? Esta ação não pode ser desfeita.")) {
       return;
@@ -490,6 +568,22 @@ function TopicDetailContent() {
   );
 }
 
+/**
+ * Página wrapper de detalhes do topic
+ * 
+ * Envolve o TopicDetailContent em Suspense para lidar com o carregamento
+ * assíncrono dos parâmetros de rota do Next.js.
+ * 
+ * Esta é a página principal exportada para a rota `/topic/[topicId]`.
+ * 
+ * @returns Componente React da página de detalhes do topic
+ * 
+ * @example
+ * ```tsx
+ * // Acessível em: /topic/abc123?subjectId=xyz789
+ * <TopicDetailPage />
+ * ```
+ */
 export default function TopicDetailPage() {
   return (
     <Suspense fallback={

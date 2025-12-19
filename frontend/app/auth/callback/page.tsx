@@ -7,18 +7,39 @@ import brainbuddyLogo from "@/public/BrainBuddy.png";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/**
+ * Componente de conteúdo do callback OAuth
+ * 
+ * Processa o código de autorização retornado pelo Google OAuth,
+ * troca pelo token no backend, salva dados do usuário e redireciona para homepage.
+ * Exibe erros se o processo falhar.
+ * 
+ * @returns Componente React do callback
+ */
 const CallbackContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const hasProcessed = useRef(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  /**
+   * Processa o callback OAuth do Google
+   * 
+   * Executa apenas uma vez (usando useRef para evitar múltiplas execuções).
+   * Extrai o código de autorização da URL, troca por tokens no backend,
+   * salva dados do usuário no localStorage e redireciona para homepage.
+   * 
+   * @throws {Error} Se o código não for encontrado ou se falhar ao processar no backend
+   */
   useEffect(() => {
     // Garantir que o callback execute apenas uma vez
     if (hasProcessed.current) {
       return;
     }
 
+    /**
+     * Função interna para processar o callback OAuth
+     */
     const handleCallback = async () => {
       hasProcessed.current = true;
 
@@ -107,6 +128,14 @@ const CallbackContent = () => {
   );
 };
 
+/**
+ * Página wrapper do callback OAuth
+ * 
+ * Envolve o CallbackContent em Suspense para lidar com o carregamento
+ * assíncrono dos searchParams do Next.js.
+ * 
+ * @returns Componente React da página de callback
+ */
 const CallbackPage = () => {
   return (
     <Suspense fallback={
