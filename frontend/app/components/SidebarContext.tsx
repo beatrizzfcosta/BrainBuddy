@@ -32,3 +32,4 @@ export function useSidebarPadding() {
   const { isOpen } = useSidebar();
   return isOpen ? 'pl-72' : 'pl-16';
 }
+

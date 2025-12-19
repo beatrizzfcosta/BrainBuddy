@@ -17,6 +17,7 @@ function NewTopicContent() {
 
   const [topicName, setTopicName] = useState("");
   const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [subject, setSubject] = useState<Subject | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -125,9 +126,14 @@ function NewTopicContent() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validar extensão
+      if (!file.name.endsWith('.txt')) {
+        setError("Apenas arquivos .txt são permitidos");
+        return;
+      }
       setFileName(file.name);
-      console.log("File selected:", file.name);
-      // TODO: Implementar upload do arquivo quando necessário
+      setSelectedFile(file);
+      setError(null);
     }
   };
 
@@ -146,16 +152,20 @@ function NewTopicContent() {
     setError(null);
 
     try {
+      // Criar FormData para enviar dados e arquivo
+      const formData = new FormData();
+      formData.append("title", topicName.trim());
+      formData.append("subjectId", subjectId);
+      
+      // Se houver arquivo selecionado, adicionar ao FormData
+      if (selectedFile) {
+        formData.append("file", selectedFile);
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/topics/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: topicName.trim(),
-          description: null,
-          subjectId: subjectId,
-        }),
+        body: formData,
+        // Não definir Content-Type manualmente - o browser define automaticamente com boundary para FormData
       });
 
       if (!response.ok) {

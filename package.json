@@ -6,6 +6,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.7"
+    "@types/react": "^19.2.7",
+    "typedoc": "^0.28.15"
   }
 }
